@@ -186,13 +186,16 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 .toast.toast-err { border-left: 4px solid var(--red); }
 
 @media (max-width: 768px) {
-  .sidebar { width: 100%; position: fixed; bottom: 0; top: auto; height: auto; flex-direction: row; border-right: none; border-top: 1px solid var(--line); padding: 0; }
+  html, body { overflow-x: hidden; }
+  .sidebar { width: 100%; position: fixed; bottom: 0; top: auto; height: auto; flex-direction: row; border-right: none; border-top: 1px solid var(--line); padding: 0; z-index: 60; }
   .sidebar-brand, .sidebar-foot { display: none; }
-  .sidebar-nav { display: flex; padding: .4rem; overflow-x: auto; flex-direction: row; }
-  .sidebar-nav button { flex: none; padding: .6rem .7rem; white-space: nowrap; font-size: .72rem; }
-  .main { margin-left: 0; padding: 1rem 1rem 5rem; }
+  .sidebar-nav { display: flex; padding: .3rem; flex-direction: row; gap: 0; }
+  .sidebar-nav button { flex: 1; flex-direction: column; align-items: center; justify-content: center; gap: .2rem; padding: .5rem .3rem; white-space: nowrap; font-size: .68rem; text-align: center; border-radius: 10px; }
+  .sidebar-nav button svg { width: 20px; height: 20px; }
+  .main { margin-left: 0; padding: 1rem 1rem 5.5rem; }
   .form-row, .form-row.triple { grid-template-columns: 1fr; }
   .veh-list-row { grid-template-columns: 1fr; gap: .4rem; }
+  .fin-tabs { flex-wrap: wrap; }
 }
 </style>
 </head>
