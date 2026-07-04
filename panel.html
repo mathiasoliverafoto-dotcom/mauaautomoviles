@@ -163,7 +163,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 .fin-tabs { display: flex; gap: .4rem; margin-bottom: 1.2rem; }
 .fin-tabs button { padding: .5rem 1rem; background: var(--bg-3); border: 1px solid var(--line); border-radius: 8px; color: var(--ink-soft); font-size: .82rem; font-weight: 600; }
 .fin-tabs button.is-active { background: var(--red); border-color: var(--red); color: #fff; }
-.sales-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+.sales-table { width: 100%; min-width: 720px; border-collapse: collapse; font-size: .85rem; }
 .sales-table th { text-align: left; padding: .6rem .8rem; color: var(--ink-mute); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; border-bottom: 1px solid var(--line); }
 .sales-table td { padding: .7rem .8rem; border-bottom: 1px solid var(--line); }
 .sales-table tr:hover td { background: var(--bg-3); }
@@ -780,14 +780,14 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       '</div>';
 
     function shortSuc(s){if(!s)return'—';var p=s.split(',');return p[p.length-1].trim();}
-    var html=resumen+'<table class="sales-table"><thead><tr><th>Fecha</th><th>Vehículo</th><th>Sucursal</th><th>Vendedor</th><th>Precio</th><th>Toma</th><th>Neto</th><th>Comisión</th></tr></thead><tbody>';
+    var html=resumen+'<div style="overflow-x:auto"><table class="sales-table"><thead><tr><th>Fecha</th><th>Vehículo</th><th>Sucursal</th><th>Vendedor</th><th>Precio</th><th>Toma</th><th>Neto</th><th>Comisión</th></tr></thead><tbody>';
     filtered.forEach(function(v){
       var veh=v.vehiculo||{};
       var imgTag=veh.foto?'<img src="/'+esc(veh.foto)+'">':'';
       var toma=v.tomaPago?('-US$ '+fmtN(v.tomaPago.valor)+'<span class="toma-tag">'+esc(v.tomaPago.descripcion)+'</span>'):'—';
       html+='<tr><td>'+v.fecha+'</td><td><div class="td-veh">'+imgTag+'<span>'+esc(veh.marca)+' '+esc(veh.modelo)+' '+veh.anio+'</span></div></td><td>'+esc(shortSuc(v.sucursal))+'</td><td>'+esc(v.vendedorNombre)+'</td><td>US$ '+fmtN(v.precioVenta)+'</td><td>'+toma+'</td><td><strong>US$ '+fmtN(v.ingresoNeto)+'</strong></td><td>US$ '+fmtN(v.comisionVendedor)+'</td></tr>';
     });
-    html+='</tbody></table>';
+    html+='</tbody></table></div>';
     out.innerHTML=html;
   };
 
