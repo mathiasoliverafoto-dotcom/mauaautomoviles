@@ -1,0 +1,13 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Maua dev server",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["tools/panel_server.py"],
+      "cwd": "/Users/mathiasolivera/Documents/Claude/Maua automoviles",
+      "port": 8765,
+      "autoPort": true
+    }
+  ]
+}

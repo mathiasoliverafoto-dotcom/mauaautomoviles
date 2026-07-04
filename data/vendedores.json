@@ -1,0 +1,35 @@
+[
+  {
+    "id": "vnd-admin",
+    "nombre": "Administrador",
+    "telefono": "092 550 422",
+    "email": "",
+    "comision": {
+      "tipo": "porcentaje",
+      "valor": 0
+    },
+    "activo": true
+  },
+  {
+    "id": "vnd-d7c6cc9e",
+    "nombre": "Juan Olivera",
+    "telefono": "098796372",
+    "email": "juan@mail.com",
+    "comision": {
+      "tipo": "porcentaje",
+      "valor": 5
+    },
+    "activo": true
+  },
+  {
+    "id": "vnd-6559e76f",
+    "nombre": "Mathias Olivera",
+    "telefono": "098796372",
+    "email": "mathias@mail.com",
+    "comision": {
+      "tipo": "porcentaje",
+      "valor": 5
+    },
+    "activo": true
+  }
+]

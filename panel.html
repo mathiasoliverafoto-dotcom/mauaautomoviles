@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel — Mauá Automóviles</title>
+<link rel="icon" href="assets/img/logo-mark.svg">
+<style>
+:root {
+  --bg: #0f1114; --bg-2: #171a1f; --bg-3: #1e2228; --bg-4: #262b33;
+  --ink: #eef1f5; --ink-soft: #9ca3af; --ink-mute: #6b7280;
+  --red: #c8102e; --red-h: #e0132f; --green: #16a34a; --green-h: #22c55e;
+  --amber: #d97706; --blue: #2563eb;
+  --line: rgba(255,255,255,.08); --radius: 12px;
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; }
+body { font-family: var(--font); background: var(--bg); color: var(--ink); min-height: 100vh; }
+a { color: var(--red); text-decoration: none; }
+button { cursor: pointer; font-family: inherit; }
+input, select, textarea { font-family: inherit; font-size: .9rem; }
+
+/* ── Login ─────────────────────────────── */
+.login-wrap { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 1rem; }
+.login-box { background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 2.4rem 2rem; width: 100%; max-width: 380px; text-align: center; }
+.login-box img { width: 48px; margin-bottom: .8rem; }
+.login-box h1 { font-size: 1.2rem; font-weight: 700; margin-bottom: .3rem; }
+.login-box p { color: var(--ink-soft); font-size: .85rem; margin-bottom: 1.6rem; }
+.login-box .field { margin-bottom: 1rem; }
+.login-box input { width: 100%; padding: .7rem .9rem; background: var(--bg-3); border: 1px solid var(--line); border-radius: 8px; color: var(--ink); outline: none; }
+.login-box input:focus { border-color: var(--red); }
+.login-box .btn-login { width: 100%; padding: .75rem; background: var(--red); color: #fff; border: none; border-radius: 8px; font-weight: 600; font-size: .95rem; margin-top: .5rem; transition: background .2s; }
+.login-box .btn-login:hover { background: var(--red-h); }
+.login-error { color: var(--red); font-size: .8rem; margin-top: .6rem; display: none; }
+
+/* ── Layout ────────────────────────────── */
+.app { display: none; }
+.app.is-active { display: flex; min-height: 100vh; }
+.sidebar { width: 220px; flex-shrink: 0; background: var(--bg-2); border-right: 1px solid var(--line); padding: 1.2rem 0; display: flex; flex-direction: column; position: fixed; top: 0; bottom: 0; z-index: 50; }
+.sidebar-brand { padding: 0 1.2rem .8rem; display: flex; align-items: center; gap: .6rem; border-bottom: 1px solid var(--line); margin-bottom: .5rem; padding-bottom: 1rem; }
+.sidebar-brand img { width: 32px; }
+.sidebar-brand span { font-weight: 700; font-size: .9rem; }
+.sidebar-nav { flex: 1; padding: .5rem .6rem; display: flex; flex-direction: column; gap: .15rem; }
+.sidebar-nav button { width: 100%; text-align: left; padding: .6rem .8rem; background: none; border: none; color: var(--ink-soft); border-radius: 8px; font-size: .85rem; font-weight: 500; display: flex; align-items: center; gap: .6rem; transition: all .15s; }
+.sidebar-nav button:hover { background: var(--bg-3); color: var(--ink); }
+.sidebar-nav button.is-active { background: var(--red); color: #fff; }
+.sidebar-nav button svg { width: 18px; height: 18px; flex-shrink: 0; }
+.sidebar-foot { padding: .8rem 1rem; border-top: 1px solid var(--line); margin-top: auto; font-size: .78rem; color: var(--ink-mute); }
+.sidebar-foot .user-name { color: var(--ink-soft); font-weight: 600; display: block; margin-bottom: .3rem; }
+.sidebar-foot button { background: none; border: none; color: var(--ink-mute); font-size: .78rem; padding: 0; text-decoration: underline; }
+.sidebar-foot button:hover { color: var(--ink); }
+.main { flex: 1; margin-left: 220px; padding: 1.5rem 2rem 3rem; }
+.section { display: none; }
+.section.is-active { display: block; }
+.main-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+.main-header h2 { font-size: 1.3rem; font-weight: 700; }
+.header-actions { display: flex; gap: .5rem; align-items: center; }
+
+/* ── Buttons ───────────────────────────── */
+.btn { padding: .55rem 1.1rem; border-radius: 8px; font-weight: 600; font-size: .85rem; border: none; display: inline-flex; align-items: center; gap: .4rem; transition: all .15s; }
+.btn-primary { background: var(--red); color: #fff; }
+.btn-primary:hover { background: var(--red-h); }
+.btn-outline { background: none; border: 1px solid var(--line); color: var(--ink-soft); }
+.btn-outline:hover { border-color: var(--ink-soft); color: var(--ink); }
+.btn-success { background: var(--green); color: #fff; }
+.btn-success:hover { background: var(--green-h); }
+.btn-danger { background: #dc2626; color: #fff; }
+.btn-danger:hover { background: #ef4444; }
+.btn-amber { background: var(--amber); color: #fff; }
+.btn-amber:hover { background: #f59e0b; }
+.btn-sm { padding: .35rem .7rem; font-size: .78rem; }
+.btn-icon { padding: .4rem; background: none; border: 1px solid var(--line); border-radius: 6px; color: var(--ink-mute); line-height: 0; }
+.btn-icon:hover { border-color: var(--ink-soft); color: var(--ink); }
+.btn-icon.is-active { background: var(--bg-4); border-color: var(--ink-soft); color: var(--ink); }
+.btn-icon svg { width: 18px; height: 18px; }
+
+/* ── Stats ─────────────────────────────── */
+.stats-row { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+.stat-card { background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 1rem 1.3rem; flex: 1; min-width: 120px; }
+.stat-card .stat-num { font-size: 1.5rem; font-weight: 800; }
+.stat-card .stat-label { font-size: .72rem; color: var(--ink-mute); text-transform: uppercase; letter-spacing: .08em; margin-top: .15rem; }
+
+/* ── Grid de vehículos ─────────────────── */
+.veh-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+.veh-panel-card { background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; transition: border-color .2s; }
+.veh-panel-card:hover { border-color: rgba(255,255,255,.18); }
+.veh-panel-card .card-img { aspect-ratio: 4/3; background: var(--bg-3); overflow: hidden; position: relative; }
+.veh-panel-card .card-img img { width: 100%; height: 100%; object-fit: contain; }
+.veh-panel-card .card-img .no-foto { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: var(--ink-mute); font-size: .8rem; }
+.card-status { position: absolute; top: 8px; left: 8px; font-size: .63rem; font-weight: 700; padding: .2rem .5rem; border-radius: 6px; text-transform: uppercase; letter-spacing: .06em; }
+.card-status.pub { background: var(--green); color: #fff; }
+.card-status.nopub { background: #6b7280; color: #fff; }
+.card-status.vendido { background: var(--amber); color: #fff; }
+.veh-panel-card .card-body { padding: .8rem 1rem; }
+.veh-panel-card .card-title { font-weight: 700; font-size: .95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.veh-panel-card .card-sub { color: var(--ink-soft); font-size: .78rem; margin-top: .2rem; }
+.veh-panel-card .card-price { font-weight: 700; font-size: 1rem; margin-top: .5rem; }
+.veh-panel-card .card-actions { display: flex; gap: .4rem; padding: 0 1rem .8rem; flex-wrap: wrap; }
+.veh-panel-card .card-actions button { flex: 1; min-width: 0; }
+
+/* ── Lista de vehículos ────────────────── */
+.veh-list { display: flex; flex-direction: column; gap: .35rem; }
+.veh-list-row { display: grid; grid-template-columns: 56px 1.2fr .7fr .6fr .5fr auto; align-items: center; gap: .8rem; padding: .55rem .8rem; background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; font-size: .85rem; }
+.veh-list-row:hover { border-color: rgba(255,255,255,.18); }
+.veh-list-row img { width: 56px; height: 40px; object-fit: contain; border-radius: 4px; background: var(--bg-3); }
+.veh-list-row .no-img { width: 56px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--bg-3); border-radius: 4px; color: var(--ink-mute); font-size: .6rem; }
+.veh-list-name { font-weight: 600; }
+.veh-list-sub { color: var(--ink-soft); font-size: .78rem; }
+.veh-list-price { font-weight: 700; }
+.veh-list-status .card-status { position: static; }
+.veh-list-actions { display: flex; gap: .3rem; }
+
+/* ── Empty state ───────────────────────── */
+.empty-state { text-align: center; padding: 4rem 1rem; color: var(--ink-mute); }
+.empty-state p { font-size: 1rem; margin-bottom: 1rem; }
+
+/* ── Modal ─────────────────────────────── */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 100; display: none; align-items: flex-start; justify-content: center; padding: 2rem 1rem; overflow-y: auto; }
+.modal-overlay.is-open { display: flex; }
+.modal { background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); width: 100%; max-width: 640px; animation: modalIn .25s ease; }
+@keyframes modalIn { from { opacity: 0; transform: translateY(12px); } }
+.modal-head { display: flex; align-items: center; justify-content: space-between; padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--line); }
+.modal-head h3 { font-size: 1.1rem; font-weight: 700; }
+.modal-close { background: none; border: none; color: var(--ink-mute); font-size: 1.4rem; line-height: 1; padding: 0; width: 28px; height: 28px; }
+.modal-close:hover { color: var(--ink); }
+.modal-body { padding: 1.5rem; }
+.modal-foot { padding: 1rem 1.5rem; border-top: 1px solid var(--line); display: flex; gap: .6rem; justify-content: flex-end; }
+
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+.form-row.triple { grid-template-columns: 1fr 1fr 1fr; }
+.form-row.full { grid-template-columns: 1fr; }
+.form-group { display: flex; flex-direction: column; gap: .3rem; }
+.form-group label { font-size: .78rem; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: .05em; }
+.form-group input, .form-group select, .form-group textarea { padding: .55rem .7rem; background: var(--bg-3); border: 1px solid var(--line); border-radius: 8px; color: var(--ink); outline: none; }
+.form-group input:focus, .form-group select:focus { border-color: var(--red); }
+.form-group select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%239ca3af' fill='none' stroke-width='1.5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right .7rem center; padding-right: 2rem; }
+.form-group textarea { resize: vertical; min-height: 60px; }
+.form-toggle { display: flex; align-items: center; gap: .6rem; padding-top: 1.4rem; }
+.form-toggle input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--red); }
+.form-toggle label { font-size: .85rem; font-weight: 500; cursor: pointer; text-transform: none; letter-spacing: 0; }
+
+/* ── Fotos upload ──────────────────────── */
+.foto-upload { border: 2px dashed var(--line); border-radius: 10px; padding: 1.5rem; text-align: center; margin-top: .5rem; cursor: pointer; transition: border-color .2s; }
+.foto-upload:hover, .foto-upload.drag-over { border-color: var(--red); }
+.foto-upload p { color: var(--ink-mute); font-size: .85rem; }
+.foto-upload p strong { color: var(--ink-soft); }
+.foto-preview { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: .8rem; }
+.foto-thumb { position: relative; width: 80px; height: 80px; border-radius: 8px; overflow: hidden; border: 1px solid var(--line); }
+.foto-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.foto-rm { position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; background: rgba(0,0,0,.7); color: #fff; border: none; border-radius: 50%; font-size: .7rem; display: flex; align-items: center; justify-content: center; }
+.foto-rm:hover { background: var(--red); }
+
+/* ── Personal cards ────────────────────── */
+.personal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+.personal-card { background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.2rem; }
+.personal-card .pc-name { font-weight: 700; font-size: 1rem; margin-bottom: .3rem; }
+.personal-card .pc-detail { color: var(--ink-soft); font-size: .82rem; display: flex; align-items: center; gap: .4rem; margin-top: .3rem; }
+.personal-card .pc-comision { margin-top: .6rem; padding: .4rem .7rem; background: var(--bg-3); border-radius: 6px; font-size: .8rem; display: inline-block; }
+.personal-card .pc-actions { display: flex; gap: .4rem; margin-top: .8rem; }
+
+/* ── Finanzas ──────────────────────────── */
+.fin-tabs { display: flex; gap: .4rem; margin-bottom: 1.2rem; }
+.fin-tabs button { padding: .5rem 1rem; background: var(--bg-3); border: 1px solid var(--line); border-radius: 8px; color: var(--ink-soft); font-size: .82rem; font-weight: 600; }
+.fin-tabs button.is-active { background: var(--red); border-color: var(--red); color: #fff; }
+.sales-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+.sales-table th { text-align: left; padding: .6rem .8rem; color: var(--ink-mute); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; border-bottom: 1px solid var(--line); }
+.sales-table td { padding: .7rem .8rem; border-bottom: 1px solid var(--line); }
+.sales-table tr:hover td { background: var(--bg-3); }
+.sales-table .td-veh { display: flex; align-items: center; gap: .6rem; }
+.sales-table .td-veh img { width: 44px; height: 32px; object-fit: contain; border-radius: 4px; background: var(--bg-3); }
+.sales-table .toma-tag { font-size: .72rem; background: var(--amber); color: #fff; padding: .1rem .4rem; border-radius: 4px; margin-left: .3rem; }
+.no-sales { text-align: center; padding: 2rem; color: var(--ink-mute); font-size: .9rem; }
+
+/* ── Confirm ───────────────────────────── */
+.confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 200; display: none; align-items: center; justify-content: center; padding: 1rem; }
+.confirm-overlay.is-open { display: flex; }
+.confirm-box { background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.5rem; max-width: 380px; width: 100%; text-align: center; }
+.confirm-box p { margin-bottom: 1.2rem; font-size: .95rem; }
+.confirm-btns { display: flex; gap: .6rem; justify-content: center; }
+
+/* ── Toast ─────────────────────────────── */
+.toast { position: fixed; bottom: 1.5rem; right: 1.5rem; z-index: 300; background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px; padding: .7rem 1.2rem; font-size: .85rem; color: var(--ink); box-shadow: 0 8px 24px rgba(0,0,0,.4); transform: translateY(100px); opacity: 0; transition: all .3s ease; }
+.toast.is-visible { transform: translateY(0); opacity: 1; }
+.toast.toast-ok { border-left: 4px solid var(--green); }
+.toast.toast-err { border-left: 4px solid var(--red); }
+
+@media (max-width: 768px) {
+  .sidebar { width: 100%; position: fixed; bottom: 0; top: auto; height: auto; flex-direction: row; border-right: none; border-top: 1px solid var(--line); padding: 0; }
+  .sidebar-brand, .sidebar-foot { display: none; }
+  .sidebar-nav { display: flex; padding: .4rem; overflow-x: auto; flex-direction: row; }
+  .sidebar-nav button { flex: none; padding: .6rem .7rem; white-space: nowrap; font-size: .72rem; }
+  .main { margin-left: 0; padding: 1rem 1rem 5rem; }
+  .form-row, .form-row.triple { grid-template-columns: 1fr; }
+  .veh-list-row { grid-template-columns: 1fr; gap: .4rem; }
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginView">
+  <div class="login-box">
+    <img src="assets/img/logo-mark.svg" alt="">
+    <h1>Panel de gestión</h1>
+    <p>Mauá Automóviles</p>
+    <form id="loginForm">
+      <div class="field"><input type="text" id="loginUser" placeholder="Usuario" autocomplete="username" required></div>
+      <div class="field"><input type="password" id="loginPass" placeholder="Contraseña" autocomplete="current-password" required></div>
+      <button type="submit" class="btn-login">Ingresar</button>
+      <div class="login-error" id="loginError"></div>
+    </form>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="app" id="appView">
+  <aside class="sidebar">
+    <div class="sidebar-brand"><img src="assets/img/logo-mark.svg" alt=""><span>Mauá Panel</span></div>
+    <nav class="sidebar-nav">
+      <button data-nav="vehiculos" class="is-active" onclick="switchSection('vehiculos')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Vehículos
+      </button>
+      <button data-nav="personal" onclick="switchSection('personal')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Personal
+      </button>
+      <button data-nav="finanzas" onclick="switchSection('finanzas')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+        Finanzas
+      </button>
+    </nav>
+    <div class="sidebar-foot">
+      <span class="user-name" id="userName"></span>
+      <button onclick="logout()">Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- ═══ VEHÍCULOS ═══ -->
+    <div class="section is-active" id="secVehiculos">
+      <div class="stats-row" id="stats"></div>
+      <div class="main-header">
+        <h2>Vehículos</h2>
+        <div class="header-actions">
+          <button class="btn-icon" id="btnViewGrid" title="Vista grilla" onclick="setView('grid')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          </button>
+          <button class="btn-icon" id="btnViewList" title="Vista lista" onclick="setView('list')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          </button>
+          <button class="btn btn-primary" onclick="openVehModal()">+ Nuevo vehículo</button>
+        </div>
+      </div>
+      <div id="vehContainer"></div>
+      <div id="emptyState" class="empty-state" style="display:none">
+        <p>No hay vehículos cargados</p>
+        <button class="btn btn-primary" onclick="openVehModal()">Cargar el primero</button>
+      </div>
+    </div>
+
+    <!-- ═══ PERSONAL ═══ -->
+    <div class="section" id="secPersonal">
+      <div class="main-header">
+        <h2>Personal / Vendedores</h2>
+        <button class="btn btn-primary" onclick="openVndModal()">+ Nuevo vendedor</button>
+      </div>
+      <div id="personalGrid" class="personal-grid"></div>
+    </div>
+
+    <!-- ═══ FINANZAS ═══ -->
+    <div class="section" id="secFinanzas">
+      <div class="main-header"><h2>Finanzas</h2></div>
+      <div class="stats-row" id="finStatsGlobal"></div>
+
+      <div style="display:flex;gap:.8rem;margin-bottom:1rem;flex-wrap:wrap;align-items:flex-end">
+        <div class="form-group">
+          <label>Período</label>
+          <div class="fin-tabs" style="margin:0">
+            <button class="is-active" data-period="dia" onclick="setFinPeriod('dia',this)">Hoy</button>
+            <button data-period="semana" onclick="setFinPeriod('semana',this)">Semana</button>
+            <button data-period="mes" onclick="setFinPeriod('mes',this)">Mes</button>
+            <button data-period="todo" onclick="setFinPeriod('todo',this)">Todo</button>
+          </div>
+        </div>
+        <div class="form-group" id="fgMes" style="display:none">
+          <label>Mes</label>
+          <input type="month" id="finMes" onchange="renderFinanzas()" style="padding:.4rem .6rem;background:var(--bg-3);border:1px solid var(--line);border-radius:8px;color:var(--ink);font-size:.82rem;font-family:inherit">
+        </div>
+        <div class="form-group" style="min-width:140px">
+          <label>Filtrar por</label>
+          <select id="finFiltrarPor" onchange="onFiltrarPorChange()">
+            <option value="">Sin filtro</option>
+            <option value="sucursal">Sucursal</option>
+            <option value="vendedor">Vendedor</option>
+          </select>
+        </div>
+        <div class="form-group" id="fgFiltroValor" style="min-width:200px;display:none">
+          <label id="lblFiltroValor">Valor</label>
+          <select id="finFiltroValor" onchange="renderFinanzas()"></select>
+        </div>
+      </div>
+
+      <div id="finResultados"></div>
+    </div>
+  </main>
+</div>
+
+<!-- MODAL VEHÍCULO -->
+<div class="modal-overlay" id="vehModalOverlay">
+  <div class="modal">
+    <div class="modal-head"><h3 id="vehModalTitle">Nuevo vehículo</h3><button class="modal-close" onclick="closeVehModal()">&times;</button></div>
+    <div class="modal-body">
+      <form id="vehForm">
+        <input type="hidden" id="fId">
+        <div class="form-row">
+          <div class="form-group"><label>Marca</label><input type="text" id="fMarca" required placeholder="Toyota, Chery..."></div>
+          <div class="form-group"><label>Modelo</label><input type="text" id="fModelo" required placeholder="Hilux, Tiggo 2 Pro..."></div>
+        </div>
+        <div class="form-row full"><div class="form-group"><label>Versión</label><input type="text" id="fVersion" placeholder="1.6 Doble Cabina..."></div></div>
+        <div class="form-row">
+          <div class="form-group"><label>Condición</label><select id="fCondicion"><option value="usado">Usado</option><option value="0km">0 km</option></select></div>
+          <div class="form-group"><label>Carrocería</label><select id="fCarroceria"><option>Hatch</option><option>Sedán</option><option>Pickup</option><option>SUV</option><option>Utilitario</option></select></div>
+        </div>
+        <div class="form-row triple">
+          <div class="form-group"><label>Año</label><input type="number" id="fAnio" min="1950" max="2030" required></div>
+          <div class="form-group"><label>Kilómetros</label><input type="number" id="fKm" min="0" required></div>
+          <div class="form-group"><label>Precio (US$)</label><input type="number" id="fPrecio" min="0" required></div>
+        </div>
+        <div class="form-row triple">
+          <div class="form-group"><label>Combustible</label><select id="fMotor"><option>Nafta</option><option>Gasoil</option><option>Híbrido</option><option>Eléctrico</option></select></div>
+          <div class="form-group"><label>Transmisión</label><select id="fTransmision"><option>Manual</option><option>Automática</option></select></div>
+          <div class="form-group"><label>Tracción</label><select id="fTraccion"><option>Delantera</option><option>Trasera</option><option>4x4</option></select></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Sucursal</label><select id="fUbicacion"><option>Florencio Sánchez 650, Melo</option><option>Bvar. Francisco Mata 524, Melo</option><option>Blvr. Aparicio Saravia, Río Branco</option></select></div>
+          <div class="form-group"><label>Fecha ingreso</label><input type="date" id="fFecha"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-toggle"><input type="checkbox" id="fPrimerDueno"><label for="fPrimerDueno">Primer dueño</label></div>
+          <div class="form-toggle"><input type="checkbox" id="fPublicado" checked><label for="fPublicado">Publicado en el sitio</label></div>
+        </div>
+        <div style="margin-top:1rem">
+          <label style="font-size:.78rem;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em">Fotos</label>
+          <div class="foto-upload" id="fotoUpload"><p><strong>Arrastrá fotos acá</strong> o hacé click para seleccionar</p><p style="font-size:.75rem;margin-top:.3rem">JPG, PNG o WebP · máx. 16 MB</p><input type="file" id="fotoInput" multiple accept="image/*" style="display:none"></div>
+          <div class="foto-preview" id="fotoPreview"></div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeVehModal()">Cancelar</button>
+      <button class="btn btn-success" id="btnSaveVeh" onclick="saveVehiculo()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VENDEDOR -->
+<div class="modal-overlay" id="vndModalOverlay">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-head"><h3 id="vndModalTitle">Nuevo vendedor</h3><button class="modal-close" onclick="closeVndModal()">&times;</button></div>
+    <div class="modal-body">
+      <form id="vndForm">
+        <input type="hidden" id="vndId">
+        <div class="form-row full"><div class="form-group"><label>Nombre y Apellido</label><input type="text" id="vndNombre" required placeholder="Juan Pérez"></div></div>
+        <div class="form-row">
+          <div class="form-group"><label>Teléfono</label><input type="text" id="vndTel" placeholder="091 801 940"></div>
+          <div class="form-group"><label>Email</label><input type="email" id="vndEmail" placeholder="juan@mail.com"></div>
+        </div>
+        <div class="form-toggle" style="padding-top:.5rem;margin-bottom:.8rem"><input type="checkbox" id="vndHayCom" onchange="toggleComision()"><label for="vndHayCom">Cobra comisión por venta</label></div>
+        <div id="comFields" style="display:none">
+          <div class="form-row">
+            <div class="form-group"><label>Tipo de comisión</label>
+              <select id="vndComTipo"><option value="porcentaje">Porcentaje (%)</option><option value="fijo">Monto fijo (US$)</option></select>
+            </div>
+            <div class="form-group"><label>Valor</label><input type="number" id="vndComValor" min="0" step="0.5" placeholder="5"></div>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeVndModal()">Cancelar</button>
+      <button class="btn btn-success" onclick="saveVendedor()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VENTA -->
+<div class="modal-overlay" id="ventaModalOverlay">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-head"><h3>Registrar venta</h3><button class="modal-close" onclick="closeVentaModal()">&times;</button></div>
+    <div class="modal-body">
+      <form id="ventaForm">
+        <input type="hidden" id="vtaVehId">
+        <div class="form-row full"><div class="form-group"><label>Vehículo</label><input type="text" id="vtaVehLabel" disabled></div></div>
+        <div class="form-row">
+          <div class="form-group"><label>Precio de venta (US$)</label><input type="number" id="vtaPrecio" min="0" required></div>
+          <div class="form-group"><label>Vendedor</label><select id="vtaVendedor" required></select></div>
+        </div>
+        <div class="form-row full"><div class="form-group"><label>Fecha</label><input type="date" id="vtaFecha"></div></div>
+        <div class="form-toggle" style="padding-top:.5rem;margin-bottom:.8rem"><input type="checkbox" id="vtaHayToma" onchange="toggleToma()"><label for="vtaHayToma">Se tomó auto como parte de pago</label></div>
+        <div id="tomaFields" style="display:none">
+          <div class="form-row">
+            <div class="form-group"><label>Auto tomado</label><input type="text" id="vtaTomaDesc" placeholder="Fiat Uno 2010"></div>
+            <div class="form-group"><label>Valor tomado (US$)</label><input type="number" id="vtaTomaValor" min="0" value="0"></div>
+          </div>
+        </div>
+        <div class="form-row full"><div class="form-group"><label>Notas</label><textarea id="vtaNotas" placeholder="Observaciones opcionales..."></textarea></div></div>
+      </form>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeVentaModal()">Cancelar</button>
+      <button class="btn btn-amber" onclick="registrarVenta()">Registrar venta</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box"><p id="confirmMsg"></p><div class="confirm-btns"><button class="btn btn-outline" onclick="closeConfirm()">Cancelar</button><button class="btn btn-danger" id="confirmYes">Eliminar</button></div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+  var vehiculos = [], vendedores = [], ventas = [];
+  var editFotos = [], viewMode = "grid", finTab = "mes";
+
+  // ── Helpers ─────────────────────────
+  function esc(s) { return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
+  function fmtN(n) { return Number(n||0).toLocaleString("es-UY"); }
+  function fmtP(n) { return n > 0 ? ("US$ " + fmtN(n)) : "Consultar"; }
+  function api(url, opts) { return fetch(url, opts).then(function(r) { if (r.ok) return r.json(); return r.json().then(function(d){throw new Error(d.error||"Error");}); }); }
+  function toast(msg, type) { var el=document.getElementById("toast"); el.textContent=msg; el.className="toast toast-"+(type||"ok")+" is-visible"; clearTimeout(el._t); el._t=setTimeout(function(){el.classList.remove("is-visible");},3000); }
+  function today() { var d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+
+  // ── Auth ────────────────────────────
+  function checkAuth() {
+    api("/api/me").then(function(d){
+      document.getElementById("loginView").style.display="none";
+      document.getElementById("appView").classList.add("is-active");
+      document.getElementById("userName").textContent=d.nombre||d.user;
+      loadAll();
+    }).catch(function(){
+      document.getElementById("loginView").style.display="flex";
+      document.getElementById("appView").classList.remove("is-active");
+    });
+  }
+  document.getElementById("loginForm").addEventListener("submit",function(e){
+    e.preventDefault();
+    var errEl=document.getElementById("loginError"); errEl.style.display="none";
+    api("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username:document.getElementById("loginUser").value,password:document.getElementById("loginPass").value})}).then(function(){checkAuth();}).catch(function(err){errEl.textContent=err.message;errEl.style.display="block";});
+  });
+  window.logout=function(){fetch("/api/logout",{method:"POST"}).then(function(){checkAuth();});};
+
+  // ── Section nav ─────────────────────
+  window.switchSection=function(name){
+    document.querySelectorAll(".section").forEach(function(s){s.classList.remove("is-active");});
+    document.getElementById("sec"+name.charAt(0).toUpperCase()+name.slice(1)).classList.add("is-active");
+    document.querySelectorAll("[data-nav]").forEach(function(b){b.classList.toggle("is-active",b.dataset.nav===name);});
+    if(name==="finanzas") renderFinanzas();
+    if(name==="personal") renderPersonal();
+  };
+
+  // ── Load all data ───────────────────
+  function loadAll(){
+    Promise.all([api("/api/vehiculos"),api("/api/vendedores"),api("/api/ventas")]).then(function(res){
+      vehiculos=res[0]; vendedores=res[1]; ventas=res[2];
+      initFinDefaults();
+      renderVehiculos(); renderPersonal(); renderFinanzas();
+    });
+  }
+
+  // ── View toggle ─────────────────────
+  window.setView=function(mode){
+    viewMode=mode;
+    document.getElementById("btnViewGrid").classList.toggle("is-active",mode==="grid");
+    document.getElementById("btnViewList").classList.toggle("is-active",mode==="list");
+    renderVehiculos();
+  };
+
+  // ── Render vehículos ────────────────
+  function renderVehiculos(){
+    var container=document.getElementById("vehContainer");
+    var empty=document.getElementById("emptyState");
+    var activeVehs=vehiculos.filter(function(v){return v.condicion!=="vendido";});
+    var vendidos=vehiculos.filter(function(v){return v.condicion==="vendido";});
+
+    // Stats
+    var pub=activeVehs.filter(function(v){return v.publicado!==false;}).length;
+    var usados=activeVehs.filter(function(v){return v.condicion==="usado";}).length;
+    var cero=activeVehs.filter(function(v){return v.condicion==="0km";}).length;
+    document.getElementById("stats").innerHTML=
+      statC(activeVehs.length,"En stock")+statC(pub,"Publicados")+statC(usados,"Usados")+statC(cero,"0 km")+statC(vendidos.length,"Vendidos");
+
+    document.getElementById("btnViewGrid").classList.toggle("is-active",viewMode==="grid");
+    document.getElementById("btnViewList").classList.toggle("is-active",viewMode==="list");
+
+    if(!activeVehs.length && !vendidos.length){ container.innerHTML=""; empty.style.display="block"; return; }
+    empty.style.display="none";
+    container.innerHTML = (viewMode==="grid" ? renderGrid(activeVehs) : renderList(activeVehs));
+  }
+  function statC(n,l){return '<div class="stat-card"><div class="stat-num">'+n+'</div><div class="stat-label">'+l+'</div></div>';}
+
+  function vehStatus(v) {
+    if(v.condicion==="vendido") return '<span class="card-status vendido">Vendido</span>';
+    return v.publicado!==false?'<span class="card-status pub">Publicado</span>':'<span class="card-status nopub">Oculto</span>';
+  }
+  function vehImg(v){return(v.fotos&&v.fotos[0])?'<img src="/'+esc(v.fotos[0])+'" alt="">':'<div class="no-foto">Sin foto</div>';}
+  function vehKm(v){return v.condicion==="0km"?"0 km":fmtN(v.km)+" km";}
+
+  function renderGrid(list){
+    return '<div class="veh-grid">'+list.map(function(v){
+      var isSold=v.condicion==="vendido";
+      return '<div class="veh-panel-card"><div class="card-img">'+vehStatus(v)+vehImg(v)+'</div>'+
+        '<div class="card-body"><div class="card-title">'+esc(v.marca)+' '+esc(v.modelo)+'</div>'+
+        '<div class="card-sub">'+esc(v.carroceria)+' · '+v.anio+' · '+vehKm(v)+'</div>'+
+        '<div class="card-price">'+fmtP(v.precio)+'</div></div>'+
+        '<div class="card-actions">'+
+        (isSold?'':
+          '<button class="btn btn-outline btn-sm" onclick="editVehiculo(\''+v.id+'\')">Editar</button>'+
+          '<button class="btn btn-outline btn-sm" onclick="togglePub(\''+v.id+'\')">'+(v.publicado!==false?"Ocultar":"Publicar")+'</button>'+
+          '<button class="btn btn-amber btn-sm" onclick="openVentaModal(\''+v.id+'\')">Vender</button>'+
+          '<button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="confirmDelete(\''+v.id+'\')">Eliminar</button>'
+        )+'</div></div>';
+    }).join("")+'</div>';
+  }
+
+  function renderList(list){
+    return '<div class="veh-list">'+list.map(function(v){
+      var isSold=v.condicion==="vendido";
+      var img=(v.fotos&&v.fotos[0])?'<img src="/'+esc(v.fotos[0])+'">':'<div class="no-img">—</div>';
+      return '<div class="veh-list-row">'+img+
+        '<div><div class="veh-list-name">'+esc(v.marca)+' '+esc(v.modelo)+'</div><div class="veh-list-sub">'+esc(v.version||"")+' · '+v.anio+'</div></div>'+
+        '<div class="veh-list-sub">'+esc(v.carroceria)+' · '+vehKm(v)+'</div>'+
+        '<div class="veh-list-price">'+fmtP(v.precio)+'</div>'+
+        '<div class="veh-list-status">'+vehStatus(v)+'</div>'+
+        '<div class="veh-list-actions">'+
+        (isSold?'':
+          '<button class="btn btn-outline btn-sm" onclick="editVehiculo(\''+v.id+'\')">Editar</button>'+
+          '<button class="btn btn-amber btn-sm" onclick="openVentaModal(\''+v.id+'\')">Vender</button>'+
+          '<button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="confirmDelete(\''+v.id+'\')">×</button>'
+        )+'</div></div>';
+    }).join("")+'</div>';
+  }
+
+  // ── Vehículo modal ──────────────────
+  window.openVehModal=function(v){
+    var isEdit=!!v;
+    document.getElementById("vehModalTitle").textContent=isEdit?"Editar vehículo":"Nuevo vehículo";
+    document.getElementById("fId").value=isEdit?v.id:"";
+    document.getElementById("fMarca").value=isEdit?v.marca:"";
+    document.getElementById("fModelo").value=isEdit?v.modelo:"";
+    document.getElementById("fVersion").value=isEdit?(v.version||""):"";
+    document.getElementById("fCondicion").value=isEdit?v.condicion:"usado";
+    document.getElementById("fCarroceria").value=isEdit?v.carroceria:"Hatch";
+    document.getElementById("fAnio").value=isEdit?v.anio:new Date().getFullYear();
+    document.getElementById("fKm").value=isEdit?v.km:0;
+    document.getElementById("fPrecio").value=isEdit?v.precio:0;
+    document.getElementById("fMotor").value=isEdit?v.tipoMotor:"Nafta";
+    document.getElementById("fTransmision").value=isEdit?v.transmision:"Manual";
+    document.getElementById("fTraccion").value=isEdit?v.traccion:"Delantera";
+    document.getElementById("fUbicacion").value=isEdit?v.ubicacion:"Melo";
+    document.getElementById("fFecha").value=isEdit?v.fechaIngreso:today();
+    document.getElementById("fPrimerDueno").checked=isEdit?!!v.primerDueno:false;
+    document.getElementById("fPublicado").checked=isEdit?v.publicado!==false:true;
+    editFotos=isEdit&&v.fotos?v.fotos.slice():[];
+    renderFotoPreview();
+    document.getElementById("vehModalOverlay").classList.add("is-open");
+  };
+  window.closeVehModal=function(){document.getElementById("vehModalOverlay").classList.remove("is-open");};
+  window.editVehiculo=function(id){var v=vehiculos.find(function(x){return x.id===id;}); if(v) openVehModal(v);};
+
+  window.saveVehiculo=function(){
+    var form=document.getElementById("vehForm");
+    if(!form.checkValidity()){form.reportValidity();return;}
+    var id=document.getElementById("fId").value;
+    var body={marca:document.getElementById("fMarca").value,modelo:document.getElementById("fModelo").value,version:document.getElementById("fVersion").value,condicion:document.getElementById("fCondicion").value,carroceria:document.getElementById("fCarroceria").value,anio:parseInt(document.getElementById("fAnio").value),km:parseInt(document.getElementById("fKm").value),precio:parseInt(document.getElementById("fPrecio").value),tipoMotor:document.getElementById("fMotor").value,transmision:document.getElementById("fTransmision").value,traccion:document.getElementById("fTraccion").value,ubicacion:document.getElementById("fUbicacion").value,fechaIngreso:document.getElementById("fFecha").value,primerDueno:document.getElementById("fPrimerDueno").checked,publicado:document.getElementById("fPublicado").checked,fotos:editFotos};
+    var url=id?"/api/vehiculos/"+id:"/api/vehiculos";
+    document.getElementById("btnSaveVeh").disabled=true;
+    api(url,{method:id?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(function(){closeVehModal();loadAll();toast(id?"Vehículo actualizado":"Vehículo creado");}).catch(function(e){toast(e.message,"err");}).finally(function(){document.getElementById("btnSaveVeh").disabled=false;});
+  };
+
+  window.togglePub=function(id){
+    var v=vehiculos.find(function(x){return x.id===id;});if(!v)return;
+    api("/api/vehiculos/"+id,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({publicado:v.publicado===false})}).then(function(){loadAll();toast(v.publicado===false?"Publicado":"Ocultado");});
+  };
+
+  // ── Delete ──────────────────────────
+  var deleteTarget=null;
+  window.confirmDelete=function(id){deleteTarget={type:"veh",id:id};document.getElementById("confirmMsg").textContent="¿Eliminar este vehículo?";document.getElementById("confirmOverlay").classList.add("is-open");};
+  window.confirmDeleteVnd=function(id){deleteTarget={type:"vnd",id:id};document.getElementById("confirmMsg").textContent="¿Eliminar este vendedor?";document.getElementById("confirmOverlay").classList.add("is-open");};
+  window.closeConfirm=function(){document.getElementById("confirmOverlay").classList.remove("is-open");deleteTarget=null;};
+  document.getElementById("confirmYes").addEventListener("click",function(){
+    if(!deleteTarget)return;
+    var url=deleteTarget.type==="veh"?"/api/vehiculos/"+deleteTarget.id:"/api/vendedores/"+deleteTarget.id;
+    api(url,{method:"DELETE"}).then(function(){closeConfirm();loadAll();toast("Eliminado");});
+  });
+
+  // ── Fotos ───────────────────────────
+  var uploadZone=document.getElementById("fotoUpload"),fotoInput=document.getElementById("fotoInput");
+  uploadZone.addEventListener("click",function(){fotoInput.click();});
+  uploadZone.addEventListener("dragover",function(e){e.preventDefault();uploadZone.classList.add("drag-over");});
+  uploadZone.addEventListener("dragleave",function(){uploadZone.classList.remove("drag-over");});
+  uploadZone.addEventListener("drop",function(e){e.preventDefault();uploadZone.classList.remove("drag-over");uploadFiles(e.dataTransfer.files);});
+  fotoInput.addEventListener("change",function(){uploadFiles(fotoInput.files);fotoInput.value="";});
+  function uploadFiles(files){Array.prototype.forEach.call(files,function(file){var fd=new FormData();fd.append("foto",file);api("/api/upload",{method:"POST",body:fd}).then(function(d){if(d.path){editFotos.push(d.path);renderFotoPreview();}else{toast(d.error||"Error","err");}}).catch(function(){toast("Error de conexión","err");});});}
+  function renderFotoPreview(){document.getElementById("fotoPreview").innerHTML=editFotos.map(function(p,i){return '<div class="foto-thumb"><img src="/'+esc(p)+'"><button type="button" class="foto-rm" onclick="removeFoto('+i+')">&times;</button></div>';}).join("");}
+  window.removeFoto=function(i){editFotos.splice(i,1);renderFotoPreview();};
+
+  // ── Personal / Vendedores ───────────
+  function renderPersonal(){
+    document.getElementById("personalGrid").innerHTML=vendedores.map(function(v){
+      var comTxt=(!v.comision||v.comision.valor===0)?"Sin comisión":(v.comision.tipo==="porcentaje"?(v.comision.valor+"%"):("US$ "+fmtN(v.comision.valor)+" fijo"));
+      return '<div class="personal-card">'+
+        '<div class="pc-name">'+esc(v.nombre)+'</div>'+
+        (v.telefono?'<div class="pc-detail">📞 '+esc(v.telefono)+'</div>':'')+
+        (v.email?'<div class="pc-detail">✉ '+esc(v.email)+'</div>':'')+
+        '<div class="pc-comision">'+comTxt+'</div>'+
+        '<div class="pc-actions">'+
+          '<button class="btn btn-outline btn-sm" onclick="editVendedor(\''+v.id+'\')">Editar</button>'+
+          '<button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="confirmDeleteVnd(\''+v.id+'\')">Eliminar</button>'+
+        '</div></div>';
+    }).join("");
+  }
+
+  window.toggleComision=function(){document.getElementById("comFields").style.display=document.getElementById("vndHayCom").checked?"block":"none";};
+  window.openVndModal=function(v){
+    var isEdit=!!v;
+    document.getElementById("vndModalTitle").textContent=isEdit?"Editar vendedor":"Nuevo vendedor";
+    document.getElementById("vndId").value=isEdit?v.id:"";
+    document.getElementById("vndNombre").value=isEdit?v.nombre:"";
+    document.getElementById("vndTel").value=isEdit?v.telefono:"";
+    document.getElementById("vndEmail").value=isEdit?v.email:"";
+    var hayCom=isEdit&&v.comision&&v.comision.valor>0;
+    document.getElementById("vndHayCom").checked=hayCom;
+    document.getElementById("comFields").style.display=hayCom?"block":"none";
+    document.getElementById("vndComTipo").value=hayCom?v.comision.tipo:"porcentaje";
+    document.getElementById("vndComValor").value=hayCom?v.comision.valor:5;
+    document.getElementById("vndModalOverlay").classList.add("is-open");
+  };
+  window.closeVndModal=function(){document.getElementById("vndModalOverlay").classList.remove("is-open");};
+  window.editVendedor=function(id){var v=vendedores.find(function(x){return x.id===id;}); if(v) openVndModal(v);};
+
+  window.saveVendedor=function(){
+    var form=document.getElementById("vndForm");
+    if(!form.checkValidity()){form.reportValidity();return;}
+    var id=document.getElementById("vndId").value;
+    var hayCom=document.getElementById("vndHayCom").checked;
+    var comision=hayCom?{tipo:document.getElementById("vndComTipo").value,valor:parseFloat(document.getElementById("vndComValor").value||0)}:{tipo:"porcentaje",valor:0};
+    var body={nombre:document.getElementById("vndNombre").value,telefono:document.getElementById("vndTel").value,email:document.getElementById("vndEmail").value,comision:comision};
+    var url=id?"/api/vendedores/"+id:"/api/vendedores";
+    api(url,{method:id?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(function(){closeVndModal();loadAll();toast(id?"Vendedor actualizado":"Vendedor creado");}).catch(function(e){toast(e.message,"err");});
+  };
+
+  // ── Venta ───────────────────────────
+  window.openVentaModal=function(id){
+    var v=vehiculos.find(function(x){return x.id===id;}); if(!v) return;
+    document.getElementById("vtaVehId").value=v.id;
+    document.getElementById("vtaVehLabel").value=v.marca+" "+v.modelo+" "+v.anio;
+    document.getElementById("vtaPrecio").value=v.precio||0;
+    document.getElementById("vtaFecha").value=today();
+    document.getElementById("vtaHayToma").checked=false;
+    document.getElementById("tomaFields").style.display="none";
+    document.getElementById("vtaTomaDesc").value="";
+    document.getElementById("vtaTomaValor").value=0;
+    document.getElementById("vtaNotas").value="";
+    var sel=document.getElementById("vtaVendedor");
+    sel.innerHTML=vendedores.map(function(vn){return '<option value="'+vn.id+'">'+esc(vn.nombre)+'</option>';}).join("");
+    document.getElementById("ventaModalOverlay").classList.add("is-open");
+  };
+  window.closeVentaModal=function(){document.getElementById("ventaModalOverlay").classList.remove("is-open");};
+  window.toggleToma=function(){document.getElementById("tomaFields").style.display=document.getElementById("vtaHayToma").checked?"block":"none";};
+
+  window.registrarVenta=function(){
+    var form=document.getElementById("ventaForm");
+    if(!form.checkValidity()){form.reportValidity();return;}
+    var body={
+      vehiculoId:document.getElementById("vtaVehId").value,
+      vendedorId:document.getElementById("vtaVendedor").value,
+      precioVenta:parseInt(document.getElementById("vtaPrecio").value),
+      tomaValor:document.getElementById("vtaHayToma").checked?parseInt(document.getElementById("vtaTomaValor").value||0):0,
+      tomaDescripcion:document.getElementById("vtaHayToma").checked?document.getElementById("vtaTomaDesc").value:"",
+      fecha:document.getElementById("vtaFecha").value,
+      notas:document.getElementById("vtaNotas").value
+    };
+    api("/api/ventas",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(function(){closeVentaModal();loadAll();switchSection("finanzas");toast("Venta registrada");}).catch(function(e){toast(e.message,"err");});
+  };
+
+  // ── Finanzas ────────────────────────
+  var finPeriod="dia";
+
+  window.setFinPeriod=function(p,btn){
+    finPeriod=p;
+    document.querySelectorAll(".fin-tabs button").forEach(function(b){b.classList.remove("is-active");});
+    if(btn)btn.classList.add("is-active");
+    document.getElementById("fgMes").style.display=(p==="mes")?"":"none";
+    renderFinanzas();
+  };
+
+  function initFinDefaults(){
+    document.getElementById("finMes").value=today().slice(0,7);
+  }
+
+  window.onFiltrarPorChange=function(){
+    var tipo=document.getElementById("finFiltrarPor").value;
+    var wrap=document.getElementById("fgFiltroValor");
+    var sel=document.getElementById("finFiltroValor");
+    var lbl=document.getElementById("lblFiltroValor");
+    if(!tipo){
+      wrap.style.display="none";
+      sel.innerHTML="";
+      renderFinanzas();
+      return;
+    }
+    wrap.style.display="";
+    if(tipo==="sucursal"){
+      lbl.textContent="Sucursal";
+      sel.innerHTML='<option value="">Todas</option><option>Florencio Sánchez 650, Melo</option><option>Bvar. Francisco Mata 524, Melo</option><option>Blvr. Aparicio Saravia, Río Branco</option>';
+    } else {
+      lbl.textContent="Vendedor";
+      sel.innerHTML='<option value="">Todos</option>'+vendedores.map(function(v){return '<option value="'+v.id+'">'+esc(v.nombre)+'</option>';}).join("");
+    }
+    renderFinanzas();
+  };
+
+  window.renderFinanzas=function(){
+    function sumNeto(arr){return arr.reduce(function(a,v){return a+v.ingresoNeto;},0);}
+    function sumCom(arr){return arr.reduce(function(a,v){return a+v.comisionVendedor;},0);}
+    function sumTomas(arr){return arr.reduce(function(a,v){return a+(v.tomaPago?v.tomaPago.valor:0);},0);}
+
+    // Stats globales (sin ningún filtro)
+    var todayStr=today();
+    var curMonth=todayStr.slice(0,7);
+    var wa=new Date();wa.setDate(wa.getDate()-7);var wStr=wa.toISOString().slice(0,10);
+    document.getElementById("finStatsGlobal").innerHTML=
+      statC("US$ "+fmtN(sumNeto(ventas.filter(function(v){return v.fecha===todayStr;}))),"Hoy")+
+      statC("US$ "+fmtN(sumNeto(ventas.filter(function(v){return v.fecha>=wStr;}))),"Semana")+
+      statC("US$ "+fmtN(sumNeto(ventas.filter(function(v){return v.fecha.slice(0,7)===curMonth;}))),"Mes actual")+
+      statC(ventas.length,"Ventas totales");
+
+    // Filtro temporal
+    var temporal;
+    if(finPeriod==="dia"){
+      temporal=ventas.filter(function(v){return v.fecha===todayStr;});
+    } else if(finPeriod==="semana"){
+      temporal=ventas.filter(function(v){return v.fecha>=wStr;});
+    } else if(finPeriod==="mes"){
+      var mesVal=document.getElementById("finMes").value;
+      temporal=ventas.filter(function(v){return v.fecha.slice(0,7)===mesVal;});
+    } else {
+      temporal=ventas.slice();
+    }
+
+    // Filtro por sucursal O vendedor
+    var filtroPor=document.getElementById("finFiltrarPor").value;
+    var filtroVal=document.getElementById("finFiltroValor").value;
+    var filtered=temporal;
+    if(filtroPor&&filtroVal){
+      filtered=temporal.filter(function(v){
+        if(filtroPor==="sucursal") return v.sucursal===filtroVal;
+        return v.vendedorId===filtroVal;
+      });
+    }
+
+    // Resultados
+    var out=document.getElementById("finResultados");
+    if(!filtered.length){
+      out.innerHTML='<div class="no-sales">Sin ventas en este período</div>';
+      return;
+    }
+
+    var resumen='<div class="stats-row" style="margin-bottom:1rem">'+
+      statC(filtered.length,"Ventas")+
+      statC("US$ "+fmtN(sumNeto(filtered)),"Ingreso neto")+
+      statC("US$ "+fmtN(sumCom(filtered)),"Comisiones")+
+      statC("US$ "+fmtN(sumTomas(filtered)),"En tomas")+
+      '</div>';
+
+    function shortSuc(s){if(!s)return'—';var p=s.split(',');return p[p.length-1].trim();}
+    var html=resumen+'<table class="sales-table"><thead><tr><th>Fecha</th><th>Vehículo</th><th>Sucursal</th><th>Vendedor</th><th>Precio</th><th>Toma</th><th>Neto</th><th>Comisión</th></tr></thead><tbody>';
+    filtered.forEach(function(v){
+      var veh=v.vehiculo||{};
+      var imgTag=veh.foto?'<img src="/'+esc(veh.foto)+'">':'';
+      var toma=v.tomaPago?('-US$ '+fmtN(v.tomaPago.valor)+'<span class="toma-tag">'+esc(v.tomaPago.descripcion)+'</span>'):'—';
+      html+='<tr><td>'+v.fecha+'</td><td><div class="td-veh">'+imgTag+'<span>'+esc(veh.marca)+' '+esc(veh.modelo)+' '+veh.anio+'</span></div></td><td>'+esc(shortSuc(v.sucursal))+'</td><td>'+esc(v.vendedorNombre)+'</td><td>US$ '+fmtN(v.precioVenta)+'</td><td>'+toma+'</td><td><strong>US$ '+fmtN(v.ingresoNeto)+'</strong></td><td>US$ '+fmtN(v.comisionVendedor)+'</td></tr>';
+    });
+    html+='</tbody></table>';
+    out.innerHTML=html;
+  };
+
+  // ── Init ────────────────────────────
+  setView("grid");
+  checkAuth();
+})();
+</script>
+</body>
+</html>
