@@ -472,12 +472,17 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 
         <p id="vtaSaldoInfo" style="font-size:.85rem;color:var(--ink-soft);margin:-.4rem 0 .8rem"></p>
 
+        <div class="form-toggle" style="padding-top:.5rem;margin-bottom:.8rem"><input type="checkbox" id="vtaHayFinanciacion" onchange="toggleFinanciacion()"><label for="vtaHayFinanciacion">Financiar un saldo con la casa (en cuotas)</label></div>
         <div id="vtaCuotasFields" style="display:none">
           <div class="form-row">
+            <div class="form-group"><label>Monto a financiar (US$)</label><input type="number" id="vtaMontoFinanciado" min="0" oninput="recalcVenta()"></div>
             <div class="form-group"><label>Cantidad de cuotas</label><input type="number" id="vtaCantCuotas" min="1" value="1" oninput="recalcVenta()"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Valor de cada cuota (US$)</label><input type="number" id="vtaValorCuota" min="0" oninput="recalcVenta()"></div>
             <div class="form-group"><label>Primer vencimiento</label><input type="date" id="vtaPrimerVenc"></div>
           </div>
-          <p id="vtaValorCuotaInfo" style="font-size:.85rem;color:var(--ink-soft);margin-bottom:.8rem"></p>
+          <p style="font-size:.78rem;color:var(--ink-mute);margin-bottom:.8rem">El monto a financiar y el valor de cada cuota los definís vos — podés incluir intereses u otros ajustes, no tienen que coincidir exactamente con el saldo.</p>
         </div>
 
         <div class="form-row full"><div class="form-group"><label>Notas</label><textarea id="vtaNotas" placeholder="Observaciones opcionales..."></textarea></div></div>
@@ -830,7 +835,11 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     document.getElementById("vtaTomaValor").value=0;
     document.getElementById("vtaMontoInicial").value=v.precio||0;
     document.getElementById("vtaMetodoPago").value="efectivo";
+    document.getElementById("vtaHayFinanciacion").checked=false;
+    document.getElementById("vtaCuotasFields").style.display="none";
+    document.getElementById("vtaMontoFinanciado").value="";
     document.getElementById("vtaCantCuotas").value=1;
+    document.getElementById("vtaValorCuota").value="";
     document.getElementById("vtaPrimerVenc").value="";
     document.getElementById("vtaNotas").value="";
     var sel=document.getElementById("vtaVendedor");
@@ -840,6 +849,19 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   };
   window.closeVentaModal=function(){document.getElementById("ventaModalOverlay").classList.remove("is-open");};
   window.toggleToma=function(){document.getElementById("tomaFields").style.display=document.getElementById("vtaHayToma").checked?"block":"none";recalcVenta();};
+  window.toggleFinanciacion=function(){
+    var on=document.getElementById("vtaHayFinanciacion").checked;
+    document.getElementById("vtaCuotasFields").style.display=on?"block":"none";
+    if(on && !document.getElementById("vtaMontoFinanciado").value){
+      var precio=parseInt(document.getElementById("vtaPrecio").value||0);
+      var toma=document.getElementById("vtaHayToma").checked?parseInt(document.getElementById("vtaTomaValor").value||0):0;
+      var inicial=parseInt(document.getElementById("vtaMontoInicial").value||0);
+      var saldo=Math.max(0,precio-toma-inicial);
+      document.getElementById("vtaMontoFinanciado").value=saldo;
+      if(!document.getElementById("vtaValorCuota").value) document.getElementById("vtaValorCuota").value=saldo;
+    }
+    recalcVenta();
+  };
 
   // Búsqueda / creación de cliente dentro del modal de venta
   function jsAttr(obj){return JSON.stringify(obj).replace(/'/g,"&#39;");}
@@ -873,23 +895,18 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     var precio=parseInt(document.getElementById("vtaPrecio").value||0);
     var toma=document.getElementById("vtaHayToma").checked?parseInt(document.getElementById("vtaTomaValor").value||0):0;
     var inicial=parseInt(document.getElementById("vtaMontoInicial").value||0);
-    var saldo=precio-toma-inicial;
+    var financia=document.getElementById("vtaHayFinanciacion").checked;
+    var montoFin=financia?parseInt(document.getElementById("vtaMontoFinanciado").value||0):0;
+    var saldoPendiente=precio-toma-inicial-montoFin;
     var info=document.getElementById("vtaSaldoInfo");
-    var cuotasWrap=document.getElementById("vtaCuotasFields");
-    if(saldo>0){
-      cuotasWrap.style.display="block";
-      info.textContent="Saldo a financiar: US$ "+fmtN(saldo);
+    if(saldoPendiente>0){
+      info.textContent="Saldo sin cubrir: US$ "+fmtN(saldoPendiente);
       info.style.color="var(--amber)";
-      var cant=Math.max(1,parseInt(document.getElementById("vtaCantCuotas").value||1));
-      var valorCuota=Math.round(saldo/cant);
-      document.getElementById("vtaValorCuotaInfo").textContent=cant+" cuotas de aprox. US$ "+fmtN(valorCuota)+" cada una";
-    } else if(saldo<0){
-      cuotasWrap.style.display="none";
-      info.textContent="La toma + el monto inicial superan el precio de venta por US$ "+fmtN(-saldo);
+    } else if(saldoPendiente<0){
+      info.textContent="Lo cubierto (toma + inicial + financiado) supera el precio de venta por US$ "+fmtN(-saldoPendiente)+" — revisá los montos si no es intencional.";
       info.style.color="var(--red)";
     } else {
-      cuotasWrap.style.display="none";
-      info.textContent="Venta cubierta en su totalidad, sin saldo a financiar.";
+      info.textContent="Venta cubierta en su totalidad.";
       info.style.color="var(--ink-mute)";
     }
   };
@@ -897,24 +914,27 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   window.registrarVenta=function(){
     var form=document.getElementById("ventaForm");
     if(!form.checkValidity()){form.reportValidity();return;}
-    var precio=parseInt(document.getElementById("vtaPrecio").value);
-    var toma=document.getElementById("vtaHayToma").checked?parseInt(document.getElementById("vtaTomaValor").value||0):0;
-    var inicial=parseInt(document.getElementById("vtaMontoInicial").value||0);
-    var saldo=precio-toma-inicial;
-    if(saldo<0){toast("La toma + el monto inicial superan el precio de venta","err");return;}
     if(!document.getElementById("vtaClienteId").value){toast("Seleccioná o creá un cliente","err");return;}
-    if(saldo>0 && !document.getElementById("vtaPrimerVenc").value){toast("Indicá la fecha del primer vencimiento","err");return;}
+    var financia=document.getElementById("vtaHayFinanciacion").checked;
+    if(financia){
+      if(!document.getElementById("vtaMontoFinanciado").value||parseInt(document.getElementById("vtaMontoFinanciado").value)<=0){toast("Indicá el monto a financiar","err");return;}
+      if(!document.getElementById("vtaValorCuota").value||parseInt(document.getElementById("vtaValorCuota").value)<=0){toast("Indicá el valor de cada cuota","err");return;}
+      if(!document.getElementById("vtaPrimerVenc").value){toast("Indicá la fecha del primer vencimiento","err");return;}
+    }
     var body={
       vehiculoId:document.getElementById("vtaVehId").value,
       vendedorId:document.getElementById("vtaVendedor").value,
       clienteId:document.getElementById("vtaClienteId").value,
-      precioVenta:precio,
-      tomaValor:toma,
+      precioVenta:parseInt(document.getElementById("vtaPrecio").value),
+      tomaValor:document.getElementById("vtaHayToma").checked?parseInt(document.getElementById("vtaTomaValor").value||0):0,
       tomaDescripcion:document.getElementById("vtaHayToma").checked?document.getElementById("vtaTomaDesc").value:"",
-      montoInicial:inicial,
+      montoInicial:parseInt(document.getElementById("vtaMontoInicial").value||0),
       metodoPago:document.getElementById("vtaMetodoPago").value,
-      cantidadCuotas:parseInt(document.getElementById("vtaCantCuotas").value||1),
-      primerVencimiento:document.getElementById("vtaPrimerVenc").value,
+      financia:financia,
+      montoFinanciado:financia?parseInt(document.getElementById("vtaMontoFinanciado").value||0):0,
+      cantidadCuotas:financia?parseInt(document.getElementById("vtaCantCuotas").value||1):0,
+      valorCuota:financia?parseInt(document.getElementById("vtaValorCuota").value||0):0,
+      primerVencimiento:financia?document.getElementById("vtaPrimerVenc").value:"",
       fecha:document.getElementById("vtaFecha").value,
       notas:document.getElementById("vtaNotas").value
     };

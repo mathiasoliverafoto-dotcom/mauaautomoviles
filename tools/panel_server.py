@@ -363,6 +363,8 @@ def api_ventas_create():
     toma_desc = body.get("tomaDescripcion", "").strip()
     metodo_pago = body.get("metodoPago", "efectivo")
     monto_inicial = int(body.get("montoInicial", precio_venta - toma_valor))
+    financia = bool(body.get("financia", False))
+    monto_financiado = int(body.get("montoFinanciado", 0)) if financia else 0
 
     veh = next((v for v in vehiculos if v["id"] == veh_id), None)
     vnd = next((v for v in vendedores if v["id"] == vnd_id), None)
@@ -374,9 +376,8 @@ def api_ventas_create():
     if not cli:
         return jsonify({"error": "Cliente no encontrado"}), 404
 
-    monto_financiado = precio_venta - toma_valor - monto_inicial
     if monto_financiado < 0:
-        return jsonify({"error": "El monto inicial + la toma superan el precio de venta"}), 400
+        return jsonify({"error": "El monto a financiar no puede ser negativo"}), 400
 
     com = vnd.get("comision", {})
     if com.get("tipo") == "porcentaje":
@@ -389,15 +390,14 @@ def api_ventas_create():
 
     financiacion_id = None
     if monto_financiado > 0:
-        cant_cuotas = int(body.get("cantidadCuotas", 1))
-        primer_venc = body.get("primerVencimiento", fecha)
-        valor_cuota = round(monto_financiado / cant_cuotas)
+        cant_cuotas = max(1, int(body.get("cantidadCuotas", 1)))
+        primer_venc = body.get("primerVencimiento") or fecha
+        valor_cuota = int(body.get("valorCuota") or round(monto_financiado / cant_cuotas))
         cuotas = []
         for i in range(cant_cuotas):
             venc = _sumar_meses(primer_venc, i)
-            valor = valor_cuota if i < cant_cuotas - 1 else (monto_financiado - valor_cuota * (cant_cuotas - 1))
             cuotas.append({
-                "numero": i + 1, "vencimiento": venc, "valor": valor,
+                "numero": i + 1, "vencimiento": venc, "valor": valor_cuota,
                 "pagada": False, "fechaPago": None, "metodoPago": None,
             })
         financiaciones = read_json("financiaciones.json")
