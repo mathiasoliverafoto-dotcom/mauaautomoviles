@@ -475,8 +475,8 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
         <div class="form-toggle" style="padding-top:.5rem;margin-bottom:.8rem"><input type="checkbox" id="vtaHayFinanciacion" onchange="toggleFinanciacion()"><label for="vtaHayFinanciacion">Financiar un saldo con la casa (en cuotas)</label></div>
         <div id="vtaCuotasFields" style="display:none">
           <div class="form-row">
-            <div class="form-group"><label>Monto a financiar (US$)</label><input type="number" id="vtaMontoFinanciado" min="0" oninput="recalcVenta()"></div>
-            <div class="form-group"><label>Cantidad de cuotas</label><input type="number" id="vtaCantCuotas" min="1" value="1" oninput="recalcVenta()"></div>
+            <div class="form-group"><label>Monto a financiar (US$)</label><input type="number" id="vtaMontoFinanciado" min="0" oninput="sugerirValorCuota()"></div>
+            <div class="form-group"><label>Cantidad de cuotas</label><input type="number" id="vtaCantCuotas" min="1" value="1" oninput="sugerirValorCuota()"></div>
           </div>
           <div class="form-row">
             <div class="form-group"><label>Valor de cada cuota (US$)</label><input type="number" id="vtaValorCuota" min="0" oninput="recalcVenta()"></div>
@@ -858,8 +858,14 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       var inicial=parseInt(document.getElementById("vtaMontoInicial").value||0);
       var saldo=Math.max(0,precio-toma-inicial);
       document.getElementById("vtaMontoFinanciado").value=saldo;
-      if(!document.getElementById("vtaValorCuota").value) document.getElementById("vtaValorCuota").value=saldo;
     }
+    sugerirValorCuota();
+  };
+
+  window.sugerirValorCuota=function(){
+    var montoFin=parseInt(document.getElementById("vtaMontoFinanciado").value||0);
+    var cant=Math.max(1,parseInt(document.getElementById("vtaCantCuotas").value||1));
+    if(montoFin>0) document.getElementById("vtaValorCuota").value=Math.round(montoFin/cant);
     recalcVenta();
   };
 
