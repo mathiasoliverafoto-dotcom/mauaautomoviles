@@ -159,6 +159,28 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 .personal-card .pc-comision { margin-top: .6rem; padding: .4rem .7rem; background: var(--bg-3); border-radius: 6px; font-size: .8rem; display: inline-block; }
 .personal-card .pc-actions { display: flex; gap: .4rem; margin-top: .8rem; }
 
+/* ── Cliente búsqueda en venta ─────────── */
+.cliente-dropdown { display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 20; background: var(--bg-3); border: 1px solid var(--line-2); border-radius: 8px; margin-top: 4px; max-height: 220px; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+.cliente-dropdown.is-open { display: block; }
+.cliente-dropdown button { width: 100%; text-align: left; padding: .6rem .8rem; background: none; border: none; color: var(--ink); font-size: .85rem; border-bottom: 1px solid var(--line); }
+.cliente-dropdown button:last-child { border-bottom: none; }
+.cliente-dropdown button:hover { background: var(--bg-4); }
+.cliente-dropdown button.cd-new { color: var(--green-h); font-weight: 600; }
+.cliente-dropdown .cd-empty { padding: .6rem .8rem; color: var(--ink-mute); font-size: .82rem; }
+
+/* ── Cobranzas ─────────────────────────── */
+.cobranza-card { background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem 1.3rem; margin-bottom: .8rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.cobranza-info { flex: 1; min-width: 200px; }
+.cobranza-info .cb-cliente { font-weight: 700; font-size: .95rem; }
+.cobranza-info .cb-veh { color: var(--ink-mute); font-size: .8rem; margin-top: .15rem; }
+.cobranza-prog { font-family: var(--font-mono); font-size: .8rem; color: var(--ink-soft); background: var(--bg-3); padding: .3rem .6rem; border-radius: 6px; }
+.cobranza-venc { text-align: right; min-width: 130px; }
+.cobranza-venc .cb-fecha { font-weight: 700; }
+.cobranza-venc .cb-valor { color: var(--ink-soft); font-size: .82rem; }
+.cobranza-actions { display: flex; gap: .5rem; }
+.cobranza-card.is-completa { opacity: .6; }
+.btn-wa-mini { background: #25d366; color: #fff; padding: .5rem .8rem; border-radius: 8px; border: none; font-size: .8rem; font-weight: 600; display: inline-flex; align-items: center; gap: .3rem; text-decoration: none; }
+
 /* ── Finanzas ──────────────────────────── */
 .fin-tabs { display: flex; gap: .4rem; margin-bottom: 1.2rem; }
 .fin-tabs button { padding: .5rem 1rem; background: var(--bg-3); border: 1px solid var(--line); border-radius: 8px; color: var(--ink-soft); font-size: .82rem; font-weight: 600; }
@@ -229,6 +251,14 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
         Personal
       </button>
+      <button data-nav="clientes" onclick="switchSection('clientes')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Clientes
+      </button>
+      <button data-nav="cobranzas" onclick="switchSection('cobranzas')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        Cobranzas
+      </button>
       <button data-nav="finanzas" onclick="switchSection('finanzas')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
         Finanzas
@@ -270,6 +300,21 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
         <button class="btn btn-primary" onclick="openVndModal()">+ Nuevo vendedor</button>
       </div>
       <div id="personalGrid" class="personal-grid"></div>
+    </div>
+
+    <!-- ═══ CLIENTES ═══ -->
+    <div class="section" id="secClientes">
+      <div class="main-header">
+        <h2>Clientes</h2>
+        <button class="btn btn-primary" onclick="openCliModal()">+ Nuevo cliente</button>
+      </div>
+      <div id="clientesGrid" class="personal-grid"></div>
+    </div>
+
+    <!-- ═══ COBRANZAS ═══ -->
+    <div class="section" id="secCobranzas">
+      <div class="main-header"><h2>Cobranzas</h2></div>
+      <div id="cobranzasWrap"></div>
     </div>
 
     <!-- ═══ FINANZAS ═══ -->
@@ -390,30 +435,79 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 
 <!-- MODAL VENTA -->
 <div class="modal-overlay" id="ventaModalOverlay">
-  <div class="modal" style="max-width:520px">
+  <div class="modal" style="max-width:560px">
     <div class="modal-head"><h3>Registrar venta</h3><button class="modal-close" onclick="closeVentaModal()">&times;</button></div>
     <div class="modal-body">
       <form id="ventaForm">
         <input type="hidden" id="vtaVehId">
         <div class="form-row full"><div class="form-group"><label>Vehículo</label><input type="text" id="vtaVehLabel" disabled></div></div>
+
+        <div class="form-row full">
+          <div class="form-group" style="position:relative">
+            <label>Cliente</label>
+            <input type="hidden" id="vtaClienteId">
+            <input type="text" id="vtaClienteBusca" placeholder="Buscar cliente por nombre..." autocomplete="off" oninput="buscarClienteVenta()" onfocus="buscarClienteVenta()" required>
+            <div id="vtaClienteResultados" class="cliente-dropdown"></div>
+          </div>
+        </div>
+
         <div class="form-row">
-          <div class="form-group"><label>Precio de venta (US$)</label><input type="number" id="vtaPrecio" min="0" required></div>
+          <div class="form-group"><label>Precio de venta (US$)</label><input type="number" id="vtaPrecio" min="0" required oninput="recalcVenta()"></div>
           <div class="form-group"><label>Vendedor</label><select id="vtaVendedor" required></select></div>
         </div>
         <div class="form-row full"><div class="form-group"><label>Fecha</label><input type="date" id="vtaFecha"></div></div>
+
         <div class="form-toggle" style="padding-top:.5rem;margin-bottom:.8rem"><input type="checkbox" id="vtaHayToma" onchange="toggleToma()"><label for="vtaHayToma">Se tomó auto como parte de pago</label></div>
         <div id="tomaFields" style="display:none">
           <div class="form-row">
             <div class="form-group"><label>Auto tomado</label><input type="text" id="vtaTomaDesc" placeholder="Fiat Uno 2010"></div>
-            <div class="form-group"><label>Valor tomado (US$)</label><input type="number" id="vtaTomaValor" min="0" value="0"></div>
+            <div class="form-group"><label>Valor tomado (US$)</label><input type="number" id="vtaTomaValor" min="0" value="0" oninput="recalcVenta()"></div>
           </div>
         </div>
+
+        <div class="form-row">
+          <div class="form-group"><label>Monto recibido ahora (US$)</label><input type="number" id="vtaMontoInicial" min="0" oninput="recalcVenta()"></div>
+          <div class="form-group"><label>Forma de pago</label><select id="vtaMetodoPago"><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia bancaria</option></select></div>
+        </div>
+
+        <p id="vtaSaldoInfo" style="font-size:.85rem;color:var(--ink-soft);margin:-.4rem 0 .8rem"></p>
+
+        <div id="vtaCuotasFields" style="display:none">
+          <div class="form-row">
+            <div class="form-group"><label>Cantidad de cuotas</label><input type="number" id="vtaCantCuotas" min="1" value="1" oninput="recalcVenta()"></div>
+            <div class="form-group"><label>Primer vencimiento</label><input type="date" id="vtaPrimerVenc"></div>
+          </div>
+          <p id="vtaValorCuotaInfo" style="font-size:.85rem;color:var(--ink-soft);margin-bottom:.8rem"></p>
+        </div>
+
         <div class="form-row full"><div class="form-group"><label>Notas</label><textarea id="vtaNotas" placeholder="Observaciones opcionales..."></textarea></div></div>
       </form>
     </div>
     <div class="modal-foot">
       <button class="btn btn-outline" onclick="closeVentaModal()">Cancelar</button>
       <button class="btn btn-amber" onclick="registrarVenta()">Registrar venta</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CLIENTE -->
+<div class="modal-overlay" id="cliModalOverlay">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-head"><h3 id="cliModalTitle">Nuevo cliente</h3><button class="modal-close" onclick="closeCliModal()">&times;</button></div>
+    <div class="modal-body">
+      <form id="cliForm">
+        <input type="hidden" id="cliId">
+        <div class="form-row full"><div class="form-group"><label>Nombre y Apellido</label><input type="text" id="cliNombre" required placeholder="María Fernández"></div></div>
+        <div class="form-row">
+          <div class="form-group"><label>Fecha de nacimiento</label><input type="date" id="cliNacimiento"></div>
+          <div class="form-group"><label>Teléfono</label><input type="text" id="cliTelefono" placeholder="099 123 456"></div>
+        </div>
+        <div class="form-row full"><div class="form-group"><label>Dirección</label><input type="text" id="cliDireccion" placeholder="Calle 123, Melo"></div></div>
+      </form>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline" onclick="closeCliModal()">Cancelar</button>
+      <button class="btn btn-success" onclick="saveCliente()">Guardar</button>
     </div>
   </div>
 </div>
@@ -428,8 +522,9 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 <script>
 (function () {
   "use strict";
-  var vehiculos = [], vendedores = [], ventas = [];
+  var vehiculos = [], vendedores = [], ventas = [], clientes = [], financiaciones = [];
   var editFotos = [], viewMode = "grid", finTab = "mes";
+  var cliModalContext = null;
 
   // ── Helpers ─────────────────────────
   function esc(s) { return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
@@ -465,14 +560,16 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     document.querySelectorAll("[data-nav]").forEach(function(b){b.classList.toggle("is-active",b.dataset.nav===name);});
     if(name==="finanzas") renderFinanzas();
     if(name==="personal") renderPersonal();
+    if(name==="clientes") renderClientes();
+    if(name==="cobranzas") renderCobranzas();
   };
 
   // ── Load all data ───────────────────
   function loadAll(){
-    Promise.all([api("/api/vehiculos"),api("/api/vendedores"),api("/api/ventas")]).then(function(res){
-      vehiculos=res[0]; vendedores=res[1]; ventas=res[2];
+    Promise.all([api("/api/vehiculos"),api("/api/vendedores"),api("/api/ventas"),api("/api/clientes"),api("/api/financiaciones")]).then(function(res){
+      vehiculos=res[0]; vendedores=res[1]; ventas=res[2]; clientes=res[3]; financiaciones=res[4];
       initFinDefaults();
-      renderVehiculos(); renderPersonal(); renderFinanzas();
+      renderVehiculos(); renderPersonal(); renderFinanzas(); renderClientes(); renderCobranzas();
     });
   }
 
@@ -595,10 +692,12 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   var deleteTarget=null;
   window.confirmDelete=function(id){deleteTarget={type:"veh",id:id};document.getElementById("confirmMsg").textContent="¿Eliminar este vehículo?";document.getElementById("confirmOverlay").classList.add("is-open");};
   window.confirmDeleteVnd=function(id){deleteTarget={type:"vnd",id:id};document.getElementById("confirmMsg").textContent="¿Eliminar este vendedor?";document.getElementById("confirmOverlay").classList.add("is-open");};
+  window.confirmDeleteCli=function(id){deleteTarget={type:"cli",id:id};document.getElementById("confirmMsg").textContent="¿Eliminar este cliente?";document.getElementById("confirmOverlay").classList.add("is-open");};
   window.closeConfirm=function(){document.getElementById("confirmOverlay").classList.remove("is-open");deleteTarget=null;};
   document.getElementById("confirmYes").addEventListener("click",function(){
     if(!deleteTarget)return;
-    var url=deleteTarget.type==="veh"?"/api/vehiculos/"+deleteTarget.id:"/api/vendedores/"+deleteTarget.id;
+    var urls={veh:"/api/vehiculos/",vnd:"/api/vendedores/",cli:"/api/clientes/"};
+    var url=urls[deleteTarget.type]+deleteTarget.id;
     api(url,{method:"DELETE"}).then(function(){closeConfirm();loadAll();toast("Eliminado");});
   });
 
@@ -658,6 +757,64 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     api(url,{method:id?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(function(){closeVndModal();loadAll();toast(id?"Vendedor actualizado":"Vendedor creado");}).catch(function(e){toast(e.message,"err");});
   };
 
+  // ── Clientes ─────────────────────────
+  function renderClientes(){
+    var grid=document.getElementById("clientesGrid");
+    if(!clientes.length){grid.innerHTML='<div class="no-sales">No hay clientes cargados</div>';return;}
+    grid.innerHTML=clientes.map(function(c){
+      return '<div class="personal-card">'+
+        '<div class="pc-name">'+esc(c.nombre)+'</div>'+
+        (c.telefono?'<div class="pc-detail">📞 '+esc(c.telefono)+'</div>':'')+
+        (c.direccion?'<div class="pc-detail">📍 '+esc(c.direccion)+'</div>':'')+
+        (c.fechaNacimiento?'<div class="pc-detail">🎂 '+esc(c.fechaNacimiento)+'</div>':'')+
+        '<div class="pc-actions">'+
+          '<button class="btn btn-outline btn-sm" onclick="editCliente(\''+c.id+'\')">Editar</button>'+
+          '<button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="confirmDeleteCli(\''+c.id+'\')">Eliminar</button>'+
+        '</div></div>';
+    }).join("");
+  }
+
+  window.openCliModal=function(c){
+    cliModalContext=null;
+    var isEdit=!!(c&&c.id);
+    document.getElementById("cliModalTitle").textContent=isEdit?"Editar cliente":"Nuevo cliente";
+    document.getElementById("cliId").value=isEdit?c.id:"";
+    document.getElementById("cliNombre").value=isEdit?c.nombre:(c&&c.nombrePrefill?c.nombrePrefill:"");
+    document.getElementById("cliNacimiento").value=isEdit?(c.fechaNacimiento||""):"";
+    document.getElementById("cliTelefono").value=isEdit?(c.telefono||""):"";
+    document.getElementById("cliDireccion").value=isEdit?(c.direccion||""):"";
+    document.getElementById("cliModalOverlay").classList.add("is-open");
+  };
+  window.openCliModalFromVenta=function(nombrePrefill){
+    openCliModal({nombrePrefill:nombrePrefill});
+    cliModalContext="venta";
+  };
+  window.closeCliModal=function(){document.getElementById("cliModalOverlay").classList.remove("is-open");cliModalContext=null;};
+  window.editCliente=function(id){var c=clientes.find(function(x){return x.id===id;}); if(c) openCliModal(c);};
+
+  window.saveCliente=function(){
+    var form=document.getElementById("cliForm");
+    if(!form.checkValidity()){form.reportValidity();return;}
+    var id=document.getElementById("cliId").value;
+    var body={
+      nombre:document.getElementById("cliNombre").value,
+      fechaNacimiento:document.getElementById("cliNacimiento").value,
+      telefono:document.getElementById("cliTelefono").value,
+      direccion:document.getElementById("cliDireccion").value
+    };
+    var url=id?"/api/clientes/"+id:"/api/clientes";
+    var wasFromVenta=cliModalContext==="venta";
+    api(url,{method:id?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(function(d){
+      return api("/api/clientes").then(function(list){
+        clientes=list;
+        closeCliModal();
+        if(wasFromVenta){seleccionarClienteVenta(d);}
+        renderClientes();
+        toast(id?"Cliente actualizado":"Cliente creado");
+      });
+    }).catch(function(e){toast(e.message,"err");});
+  };
+
   // ── Venta ───────────────────────────
   window.openVentaModal=function(id){
     var v=vehiculos.find(function(x){return x.id===id;}); if(!v) return;
@@ -665,31 +822,153 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     document.getElementById("vtaVehLabel").value=v.marca+" "+v.modelo+" "+v.anio;
     document.getElementById("vtaPrecio").value=v.precio||0;
     document.getElementById("vtaFecha").value=today();
+    document.getElementById("vtaClienteId").value="";
+    document.getElementById("vtaClienteBusca").value="";
     document.getElementById("vtaHayToma").checked=false;
     document.getElementById("tomaFields").style.display="none";
     document.getElementById("vtaTomaDesc").value="";
     document.getElementById("vtaTomaValor").value=0;
+    document.getElementById("vtaMontoInicial").value=v.precio||0;
+    document.getElementById("vtaMetodoPago").value="efectivo";
+    document.getElementById("vtaCantCuotas").value=1;
+    document.getElementById("vtaPrimerVenc").value="";
     document.getElementById("vtaNotas").value="";
     var sel=document.getElementById("vtaVendedor");
     sel.innerHTML=vendedores.map(function(vn){return '<option value="'+vn.id+'">'+esc(vn.nombre)+'</option>';}).join("");
     document.getElementById("ventaModalOverlay").classList.add("is-open");
+    recalcVenta();
   };
   window.closeVentaModal=function(){document.getElementById("ventaModalOverlay").classList.remove("is-open");};
-  window.toggleToma=function(){document.getElementById("tomaFields").style.display=document.getElementById("vtaHayToma").checked?"block":"none";};
+  window.toggleToma=function(){document.getElementById("tomaFields").style.display=document.getElementById("vtaHayToma").checked?"block":"none";recalcVenta();};
+
+  // Búsqueda / creación de cliente dentro del modal de venta
+  function jsAttr(obj){return JSON.stringify(obj).replace(/'/g,"&#39;");}
+  window.buscarClienteVenta=function(){
+    var q=document.getElementById("vtaClienteBusca").value.trim().toLowerCase();
+    var resWrap=document.getElementById("vtaClienteResultados");
+    var matches=q?clientes.filter(function(c){return c.nombre.toLowerCase().indexOf(q)>-1;}):clientes.slice(0,8);
+    var html="";
+    matches.slice(0,8).forEach(function(c){
+      html+='<button type="button" onclick=\'seleccionarClienteVenta('+jsAttr(c)+')\'>'+esc(c.nombre)+(c.telefono?' — '+esc(c.telefono):'')+'</button>';
+    });
+    if(q && !clientes.some(function(c){return c.nombre.toLowerCase()===q;})){
+      html+='<button type="button" class="cd-new" onclick=\'openCliModalFromVenta('+jsAttr(document.getElementById("vtaClienteBusca").value)+')\'>+ Crear nuevo cliente: "'+esc(document.getElementById("vtaClienteBusca").value)+'"</button>';
+    }
+    if(!html) html='<div class="cd-empty">Escribí para buscar un cliente</div>';
+    resWrap.innerHTML=html;
+    resWrap.classList.add("is-open");
+  };
+  window.seleccionarClienteVenta=function(c){
+    document.getElementById("vtaClienteId").value=c.id;
+    document.getElementById("vtaClienteBusca").value=c.nombre;
+    document.getElementById("vtaClienteResultados").classList.remove("is-open");
+  };
+  document.addEventListener("click",function(e){
+    if(!e.target.closest("#vtaClienteBusca") && !e.target.closest("#vtaClienteResultados")){
+      var rw=document.getElementById("vtaClienteResultados"); if(rw) rw.classList.remove("is-open");
+    }
+  });
+
+  window.recalcVenta=function(){
+    var precio=parseInt(document.getElementById("vtaPrecio").value||0);
+    var toma=document.getElementById("vtaHayToma").checked?parseInt(document.getElementById("vtaTomaValor").value||0):0;
+    var inicial=parseInt(document.getElementById("vtaMontoInicial").value||0);
+    var saldo=precio-toma-inicial;
+    var info=document.getElementById("vtaSaldoInfo");
+    var cuotasWrap=document.getElementById("vtaCuotasFields");
+    if(saldo>0){
+      cuotasWrap.style.display="block";
+      info.textContent="Saldo a financiar: US$ "+fmtN(saldo);
+      info.style.color="var(--amber)";
+      var cant=Math.max(1,parseInt(document.getElementById("vtaCantCuotas").value||1));
+      var valorCuota=Math.round(saldo/cant);
+      document.getElementById("vtaValorCuotaInfo").textContent=cant+" cuotas de aprox. US$ "+fmtN(valorCuota)+" cada una";
+    } else if(saldo<0){
+      cuotasWrap.style.display="none";
+      info.textContent="La toma + el monto inicial superan el precio de venta por US$ "+fmtN(-saldo);
+      info.style.color="var(--red)";
+    } else {
+      cuotasWrap.style.display="none";
+      info.textContent="Venta cubierta en su totalidad, sin saldo a financiar.";
+      info.style.color="var(--ink-mute)";
+    }
+  };
 
   window.registrarVenta=function(){
     var form=document.getElementById("ventaForm");
     if(!form.checkValidity()){form.reportValidity();return;}
+    var precio=parseInt(document.getElementById("vtaPrecio").value);
+    var toma=document.getElementById("vtaHayToma").checked?parseInt(document.getElementById("vtaTomaValor").value||0):0;
+    var inicial=parseInt(document.getElementById("vtaMontoInicial").value||0);
+    var saldo=precio-toma-inicial;
+    if(saldo<0){toast("La toma + el monto inicial superan el precio de venta","err");return;}
+    if(!document.getElementById("vtaClienteId").value){toast("Seleccioná o creá un cliente","err");return;}
+    if(saldo>0 && !document.getElementById("vtaPrimerVenc").value){toast("Indicá la fecha del primer vencimiento","err");return;}
     var body={
       vehiculoId:document.getElementById("vtaVehId").value,
       vendedorId:document.getElementById("vtaVendedor").value,
-      precioVenta:parseInt(document.getElementById("vtaPrecio").value),
-      tomaValor:document.getElementById("vtaHayToma").checked?parseInt(document.getElementById("vtaTomaValor").value||0):0,
+      clienteId:document.getElementById("vtaClienteId").value,
+      precioVenta:precio,
+      tomaValor:toma,
       tomaDescripcion:document.getElementById("vtaHayToma").checked?document.getElementById("vtaTomaDesc").value:"",
+      montoInicial:inicial,
+      metodoPago:document.getElementById("vtaMetodoPago").value,
+      cantidadCuotas:parseInt(document.getElementById("vtaCantCuotas").value||1),
+      primerVencimiento:document.getElementById("vtaPrimerVenc").value,
       fecha:document.getElementById("vtaFecha").value,
       notas:document.getElementById("vtaNotas").value
     };
     api("/api/ventas",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(function(){closeVentaModal();loadAll();switchSection("finanzas");toast("Venta registrada");}).catch(function(e){toast(e.message,"err");});
+  };
+
+  // ── Cobranzas (cuotas de financiación) ──
+  function waLink(telefono){
+    var digits=String(telefono||"").replace(/\D/g,"");
+    if(digits.length<=9) digits="598"+digits.replace(/^0/,"");
+    return digits;
+  }
+  function fmtFechaLarga(iso){
+    var meses=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+    var p=iso.split("-"); return parseInt(p[2],10)+" de "+meses[parseInt(p[1],10)-1];
+  }
+  function renderCobranzas(){
+    var wrap=document.getElementById("cobranzasWrap");
+    if(!financiaciones.length){wrap.innerHTML='<div class="no-sales">No hay financiaciones activas</div>';return;}
+    wrap.innerHTML=financiaciones.map(function(f){
+      var pagadas=f.cuotas.filter(function(c){return c.pagada;}).length;
+      var pendiente=f.cuotas.find(function(c){return !c.pagada;});
+      var completa=!pendiente;
+      var msg="Hola "+f.clienteNombre+"! Te recordamos que el "+(pendiente?fmtFechaLarga(pendiente.vencimiento):"")+" vence tu cuota de US$ "+(pendiente?fmtN(pendiente.valor):"")+" correspondiente a tu compra en Mauá Automóviles. ¡Muchas gracias por confiar en nosotros! 🚗";
+      var waHref="https://wa.me/"+waLink(f.clienteTelefono)+"?text="+encodeURIComponent(msg);
+      return '<div class="cobranza-card'+(completa?' is-completa':'')+'">'+
+        '<div class="cobranza-info">'+
+          '<div class="cb-cliente">'+esc(f.clienteNombre)+'</div>'+
+          '<div class="cb-veh">'+esc(f.vehiculo)+'</div>'+
+        '</div>'+
+        '<div class="cobranza-prog">'+pagadas+'/'+f.cantidadCuotas+' cuotas</div>'+
+        (completa?
+          '<div class="cobranza-venc"><div class="cb-fecha" style="color:var(--green-h)">Financiación saldada</div></div>'
+          :
+          '<div class="cobranza-venc"><div class="cb-fecha">'+pendiente.vencimiento+'</div><div class="cb-valor">US$ '+fmtN(pendiente.valor)+'</div></div>'+
+          '<div class="cobranza-actions">'+
+            '<a class="btn-wa-mini" href="'+waHref+'" target="_blank" rel="noopener">WhatsApp</a>'+
+            '<button class="btn btn-outline btn-sm" onclick="togglePagoBox(\''+f.id+'\')">Registrar pago</button>'+
+          '</div>'
+        )+
+        (completa?'':'<div class="pago-box" id="pagoBox-'+f.id+'" style="display:none;width:100%;margin-top:.6rem;gap:.5rem;justify-content:flex-end">'+
+          '<button class="btn btn-success btn-sm" onclick="pagarCuota(\''+f.id+'\',\'efectivo\')">Efectivo</button>'+
+          '<button class="btn btn-success btn-sm" onclick="pagarCuota(\''+f.id+'\',\'transferencia\')">Transferencia</button>'+
+        '</div>')+
+      '</div>';
+    }).join("");
+  }
+  window.togglePagoBox=function(id){
+    var box=document.getElementById("pagoBox-"+id);
+    if(!box)return;
+    box.style.display=(box.style.display==="none")?"flex":"none";
+  };
+  window.pagarCuota=function(id,metodo){
+    api("/api/financiaciones/"+id+"/pagar",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({metodoPago:metodo})}).then(function(){loadAll();toast("Pago registrado");}).catch(function(e){toast(e.message,"err");});
   };
 
   // ── Finanzas ────────────────────────
@@ -729,68 +1008,108 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     renderFinanzas();
   };
 
+  function cobrosCuotas(){
+    // Aplana los pagos de cuotas ya cobrados, con sucursal/vendedor heredados de la venta original
+    var ventaById={}; ventas.forEach(function(v){ventaById[v.id]=v;});
+    var out=[];
+    financiaciones.forEach(function(f){
+      var venta=ventaById[f.ventaId]||{};
+      f.cuotas.forEach(function(c){
+        if(c.pagada){
+          out.push({
+            fecha:c.fechaPago, monto:c.valor, metodoPago:c.metodoPago,
+            sucursal:venta.sucursal||"", vendedorId:venta.vendedorId||"", vendedorNombre:venta.vendedorNombre||"",
+            clienteNombre:f.clienteNombre, vehiculo:f.vehiculo, numero:c.numero, cantidadCuotas:f.cantidadCuotas
+          });
+        }
+      });
+    });
+    return out;
+  }
+
   window.renderFinanzas=function(){
     function sumNeto(arr){return arr.reduce(function(a,v){return a+v.ingresoNeto;},0);}
     function sumCom(arr){return arr.reduce(function(a,v){return a+v.comisionVendedor;},0);}
     function sumTomas(arr){return arr.reduce(function(a,v){return a+(v.tomaPago?v.tomaPago.valor:0);},0);}
+    function sumMonto(arr){return arr.reduce(function(a,c){return a+c.monto;},0);}
 
-    // Stats globales (sin ningún filtro)
+    var cuotasPagas=cobrosCuotas();
+
+    // Stats globales (caja real: monto inicial de ventas + cuotas cobradas, sin filtros)
     var todayStr=today();
     var curMonth=todayStr.slice(0,7);
     var wa=new Date();wa.setDate(wa.getDate()-7);var wStr=wa.toISOString().slice(0,10);
+    function ingresoDia(f){return sumNeto(ventas.filter(function(v){return v.fecha===f;}))+sumMonto(cuotasPagas.filter(function(c){return c.fecha===f;}));}
+    function ingresoDesde(f){return sumNeto(ventas.filter(function(v){return v.fecha>=f;}))+sumMonto(cuotasPagas.filter(function(c){return c.fecha>=f;}));}
+    function ingresoMes(m){return sumNeto(ventas.filter(function(v){return v.fecha.slice(0,7)===m;}))+sumMonto(cuotasPagas.filter(function(c){return c.fecha.slice(0,7)===m;}));}
     document.getElementById("finStatsGlobal").innerHTML=
-      statC("US$ "+fmtN(sumNeto(ventas.filter(function(v){return v.fecha===todayStr;}))),"Hoy")+
-      statC("US$ "+fmtN(sumNeto(ventas.filter(function(v){return v.fecha>=wStr;}))),"Semana")+
-      statC("US$ "+fmtN(sumNeto(ventas.filter(function(v){return v.fecha.slice(0,7)===curMonth;}))),"Mes actual")+
+      statC("US$ "+fmtN(ingresoDia(todayStr)),"Hoy")+
+      statC("US$ "+fmtN(ingresoDesde(wStr)),"Semana")+
+      statC("US$ "+fmtN(ingresoMes(curMonth)),"Mes actual")+
       statC(ventas.length,"Ventas totales");
 
     // Filtro temporal
-    var temporal;
+    var temporalVentas, temporalCuotas;
     if(finPeriod==="dia"){
-      temporal=ventas.filter(function(v){return v.fecha===todayStr;});
+      temporalVentas=ventas.filter(function(v){return v.fecha===todayStr;});
+      temporalCuotas=cuotasPagas.filter(function(c){return c.fecha===todayStr;});
     } else if(finPeriod==="semana"){
-      temporal=ventas.filter(function(v){return v.fecha>=wStr;});
+      temporalVentas=ventas.filter(function(v){return v.fecha>=wStr;});
+      temporalCuotas=cuotasPagas.filter(function(c){return c.fecha>=wStr;});
     } else if(finPeriod==="mes"){
       var mesVal=document.getElementById("finMes").value;
-      temporal=ventas.filter(function(v){return v.fecha.slice(0,7)===mesVal;});
+      temporalVentas=ventas.filter(function(v){return v.fecha.slice(0,7)===mesVal;});
+      temporalCuotas=cuotasPagas.filter(function(c){return c.fecha.slice(0,7)===mesVal;});
     } else {
-      temporal=ventas.slice();
+      temporalVentas=ventas.slice();
+      temporalCuotas=cuotasPagas.slice();
     }
 
     // Filtro por sucursal O vendedor
     var filtroPor=document.getElementById("finFiltrarPor").value;
     var filtroVal=document.getElementById("finFiltroValor").value;
-    var filtered=temporal;
+    var filteredVentas=temporalVentas, filteredCuotas=temporalCuotas;
     if(filtroPor&&filtroVal){
-      filtered=temporal.filter(function(v){
-        if(filtroPor==="sucursal") return v.sucursal===filtroVal;
-        return v.vendedorId===filtroVal;
-      });
+      filteredVentas=temporalVentas.filter(function(v){return filtroPor==="sucursal"?v.sucursal===filtroVal:v.vendedorId===filtroVal;});
+      filteredCuotas=temporalCuotas.filter(function(c){return filtroPor==="sucursal"?c.sucursal===filtroVal:c.vendedorId===filtroVal;});
     }
 
-    // Resultados
+    var ingresoTotal=sumNeto(filteredVentas)+sumMonto(filteredCuotas);
+
     var out=document.getElementById("finResultados");
-    if(!filtered.length){
-      out.innerHTML='<div class="no-sales">Sin ventas en este período</div>';
+    if(!filteredVentas.length && !filteredCuotas.length){
+      out.innerHTML='<div class="no-sales">Sin movimientos en este período</div>';
       return;
     }
 
     var resumen='<div class="stats-row" style="margin-bottom:1rem">'+
-      statC(filtered.length,"Ventas")+
-      statC("US$ "+fmtN(sumNeto(filtered)),"Ingreso neto")+
-      statC("US$ "+fmtN(sumCom(filtered)),"Comisiones")+
-      statC("US$ "+fmtN(sumTomas(filtered)),"En tomas")+
+      statC(filteredVentas.length,"Ventas")+
+      statC("US$ "+fmtN(ingresoTotal),"Ingreso neto (caja)")+
+      statC("US$ "+fmtN(sumCom(filteredVentas)),"Comisiones")+
+      statC("US$ "+fmtN(sumTomas(filteredVentas)),"En tomas")+
       '</div>';
 
     function shortSuc(s){if(!s)return'—';var p=s.split(',');return p[p.length-1].trim();}
-    var html=resumen+'<div style="overflow-x:auto"><table class="sales-table"><thead><tr><th>Fecha</th><th>Vehículo</th><th>Sucursal</th><th>Vendedor</th><th>Precio</th><th>Toma</th><th>Neto</th><th>Comisión</th></tr></thead><tbody>';
-    filtered.forEach(function(v){
+    function metodoTxt(m){return m==="transferencia"?"Transferencia":"Efectivo";}
+    var html=resumen+'<div style="overflow-x:auto"><table class="sales-table"><thead><tr><th>Fecha</th><th>Vehículo</th><th>Sucursal</th><th>Vendedor</th><th>Precio</th><th>Toma</th><th>Recibido</th><th>Forma de pago</th><th>Comisión</th></tr></thead><tbody>';
+    filteredVentas.forEach(function(v){
       var veh=v.vehiculo||{};
       var imgTag=veh.foto?'<img src="/'+esc(veh.foto)+'">':'';
       var toma=v.tomaPago?('-US$ '+fmtN(v.tomaPago.valor)+'<span class="toma-tag">'+esc(v.tomaPago.descripcion)+'</span>'):'—';
-      html+='<tr><td>'+v.fecha+'</td><td><div class="td-veh">'+imgTag+'<span>'+esc(veh.marca)+' '+esc(veh.modelo)+' '+veh.anio+'</span></div></td><td>'+esc(shortSuc(v.sucursal))+'</td><td>'+esc(v.vendedorNombre)+'</td><td>US$ '+fmtN(v.precioVenta)+'</td><td>'+toma+'</td><td><strong>US$ '+fmtN(v.ingresoNeto)+'</strong></td><td>US$ '+fmtN(v.comisionVendedor)+'</td></tr>';
+      var saldoTxt=v.montoFinanciado>0?(' <span class="toma-tag" style="background:var(--blue)">financia US$ '+fmtN(v.montoFinanciado)+'</span>'):'';
+      html+='<tr><td>'+v.fecha+'</td><td><div class="td-veh">'+imgTag+'<span>'+esc(veh.marca)+' '+esc(veh.modelo)+' '+veh.anio+'</span></div></td><td>'+esc(shortSuc(v.sucursal))+'</td><td>'+esc(v.vendedorNombre)+'</td><td>US$ '+fmtN(v.precioVenta)+'</td><td>'+toma+'</td><td><strong>US$ '+fmtN(v.ingresoNeto)+'</strong>'+saldoTxt+'</td><td>'+metodoTxt(v.metodoPago)+'</td><td>US$ '+fmtN(v.comisionVendedor)+'</td></tr>';
     });
     html+='</tbody></table></div>';
+
+    if(filteredCuotas.length){
+      html+='<h3 style="margin:1.4rem 0 .8rem;font-size:.95rem">Cobros de cuotas en el período</h3>';
+      html+='<div style="overflow-x:auto"><table class="sales-table"><thead><tr><th>Fecha</th><th>Cliente</th><th>Vehículo</th><th>Cuota</th><th>Monto</th><th>Forma de pago</th></tr></thead><tbody>';
+      filteredCuotas.forEach(function(c){
+        html+='<tr><td>'+c.fecha+'</td><td>'+esc(c.clienteNombre)+'</td><td>'+esc(c.vehiculo)+'</td><td>'+c.numero+'/'+c.cantidadCuotas+'</td><td><strong>US$ '+fmtN(c.monto)+'</strong></td><td>'+metodoTxt(c.metodoPago)+'</td></tr>';
+      });
+      html+='</tbody></table></div>';
+    }
+
     out.innerHTML=html;
   };
 

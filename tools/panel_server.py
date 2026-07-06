@@ -278,6 +278,57 @@ def api_vendedores_delete(vid):
 
 
 # ──────────────────────────────────────────────────────────────
+# CRUD Clientes
+# ──────────────────────────────────────────────────────────────
+
+@app.route("/api/clientes", methods=["GET"])
+@login_required
+def api_clientes_list():
+    return jsonify(read_json("clientes.json"))
+
+@app.route("/api/clientes", methods=["POST"])
+@login_required
+def api_clientes_create():
+    body = request.get_json(silent=True) or {}
+    clientes = read_json("clientes.json")
+    nuevo = {
+        "id": "cli-" + uuid.uuid4().hex[:8],
+        "nombre": body.get("nombre", "").strip(),
+        "fechaNacimiento": body.get("fechaNacimiento", ""),
+        "direccion": body.get("direccion", "").strip(),
+        "telefono": body.get("telefono", "").strip(),
+    }
+    clientes.append(nuevo)
+    write_json("clientes.json", clientes)
+    return jsonify(nuevo), 201
+
+@app.route("/api/clientes/<cid>", methods=["PUT"])
+@login_required
+def api_clientes_update(cid):
+    body = request.get_json(silent=True) or {}
+    clientes = read_json("clientes.json")
+    for i, c in enumerate(clientes):
+        if c["id"] == cid:
+            for key in ["nombre", "fechaNacimiento", "direccion", "telefono"]:
+                if key in body:
+                    clientes[i][key] = body[key].strip() if isinstance(body[key], str) else body[key]
+            write_json("clientes.json", clientes)
+            return jsonify(clientes[i])
+    return jsonify({"error": "Cliente no encontrado"}), 404
+
+@app.route("/api/clientes/<cid>", methods=["DELETE"])
+@login_required
+def api_clientes_delete(cid):
+    clientes = read_json("clientes.json")
+    original = len(clientes)
+    clientes = [c for c in clientes if c["id"] != cid]
+    if len(clientes) == original:
+        return jsonify({"error": "Cliente no encontrado"}), 404
+    write_json("clientes.json", clientes)
+    return jsonify({"ok": True})
+
+
+# ──────────────────────────────────────────────────────────────
 # Ventas
 # ──────────────────────────────────────────────────────────────
 
@@ -286,6 +337,15 @@ def api_vendedores_delete(vid):
 def api_ventas_list():
     return jsonify(read_json("ventas.json"))
 
+def _sumar_meses(fecha_str, n):
+    y, m, d = [int(x) for x in fecha_str.split("-")]
+    total = (m - 1) + n
+    y2 = y + total // 12
+    m2 = total % 12 + 1
+    import calendar
+    d2 = min(d, calendar.monthrange(y2, m2)[1])
+    return f"{y2:04d}-{m2:02d}-{d2:02d}"
+
 @app.route("/api/ventas", methods=["POST"])
 @login_required
 def api_ventas_create():
@@ -293,21 +353,30 @@ def api_ventas_create():
     ventas = read_json("ventas.json")
     vehiculos = read_json("vehiculos.json")
     vendedores = read_json("vendedores.json")
+    clientes = read_json("clientes.json")
 
     veh_id = body.get("vehiculoId", "")
     vnd_id = body.get("vendedorId", "")
+    cli_id = body.get("clienteId", "")
     precio_venta = int(body.get("precioVenta", 0))
     toma_valor = int(body.get("tomaValor", 0))
     toma_desc = body.get("tomaDescripcion", "").strip()
+    metodo_pago = body.get("metodoPago", "efectivo")
+    monto_inicial = int(body.get("montoInicial", precio_venta - toma_valor))
 
     veh = next((v for v in vehiculos if v["id"] == veh_id), None)
     vnd = next((v for v in vendedores if v["id"] == vnd_id), None)
+    cli = next((c for c in clientes if c["id"] == cli_id), None)
     if not veh:
         return jsonify({"error": "Vehículo no encontrado"}), 404
     if not vnd:
         return jsonify({"error": "Vendedor no encontrado"}), 404
+    if not cli:
+        return jsonify({"error": "Cliente no encontrado"}), 404
 
-    ingreso_neto = precio_venta - toma_valor
+    monto_financiado = precio_venta - toma_valor - monto_inicial
+    if monto_financiado < 0:
+        return jsonify({"error": "El monto inicial + la toma superan el precio de venta"}), 400
 
     com = vnd.get("comision", {})
     if com.get("tipo") == "porcentaje":
@@ -315,8 +384,40 @@ def api_ventas_create():
     else:
         comision_monto = int(com.get("valor", 0))
 
+    fecha = body.get("fecha", datetime.now().strftime("%Y-%m-%d"))
+    venta_id = "vta-" + uuid.uuid4().hex[:8]
+
+    financiacion_id = None
+    if monto_financiado > 0:
+        cant_cuotas = int(body.get("cantidadCuotas", 1))
+        primer_venc = body.get("primerVencimiento", fecha)
+        valor_cuota = round(monto_financiado / cant_cuotas)
+        cuotas = []
+        for i in range(cant_cuotas):
+            venc = _sumar_meses(primer_venc, i)
+            valor = valor_cuota if i < cant_cuotas - 1 else (monto_financiado - valor_cuota * (cant_cuotas - 1))
+            cuotas.append({
+                "numero": i + 1, "vencimiento": venc, "valor": valor,
+                "pagada": False, "fechaPago": None, "metodoPago": None,
+            })
+        financiaciones = read_json("financiaciones.json")
+        financiacion_id = "fin-" + uuid.uuid4().hex[:8]
+        financiaciones.append({
+            "id": financiacion_id,
+            "ventaId": venta_id,
+            "clienteId": cli_id,
+            "clienteNombre": cli.get("nombre", ""),
+            "clienteTelefono": cli.get("telefono", ""),
+            "vehiculo": f'{veh.get("marca","")} {veh.get("modelo","")} {veh.get("anio","")}',
+            "montoTotal": monto_financiado,
+            "cantidadCuotas": cant_cuotas,
+            "valorCuota": valor_cuota,
+            "cuotas": cuotas,
+        })
+        write_json("financiaciones.json", financiaciones)
+
     venta = {
-        "id": "vta-" + uuid.uuid4().hex[:8],
+        "id": venta_id,
         "vehiculoId": veh_id,
         "vehiculo": {
             "marca": veh.get("marca", ""),
@@ -328,11 +429,17 @@ def api_ventas_create():
         "sucursal": veh.get("ubicacion", ""),
         "vendedorId": vnd_id,
         "vendedorNombre": vnd.get("nombre", ""),
+        "clienteId": cli_id,
+        "clienteNombre": cli.get("nombre", ""),
         "precioVenta": precio_venta,
         "tomaPago": {"descripcion": toma_desc, "valor": toma_valor} if toma_valor > 0 else None,
-        "ingresoNeto": ingreso_neto,
+        "metodoPago": metodo_pago,
+        "montoInicial": monto_inicial,
+        "montoFinanciado": monto_financiado,
+        "financiacionId": financiacion_id,
+        "ingresoNeto": monto_inicial,
         "comisionVendedor": comision_monto,
-        "fecha": body.get("fecha", datetime.now().strftime("%Y-%m-%d")),
+        "fecha": fecha,
         "notas": body.get("notas", "").strip(),
     }
 
@@ -348,6 +455,34 @@ def api_ventas_create():
     write_json("vehiculos.json", vehiculos)
 
     return jsonify(venta), 201
+
+
+# ──────────────────────────────────────────────────────────────
+# Financiaciones (cuotas de la casa)
+# ──────────────────────────────────────────────────────────────
+
+@app.route("/api/financiaciones", methods=["GET"])
+@login_required
+def api_financiaciones_list():
+    return jsonify(read_json("financiaciones.json"))
+
+@app.route("/api/financiaciones/<fid>/pagar", methods=["POST"])
+@login_required
+def api_financiaciones_pagar(fid):
+    body = request.get_json(silent=True) or {}
+    metodo = body.get("metodoPago", "efectivo")
+    financiaciones = read_json("financiaciones.json")
+    for i, f in enumerate(financiaciones):
+        if f["id"] == fid:
+            pendiente = next((c for c in f["cuotas"] if not c["pagada"]), None)
+            if not pendiente:
+                return jsonify({"error": "No hay cuotas pendientes"}), 400
+            pendiente["pagada"] = True
+            pendiente["fechaPago"] = body.get("fecha", datetime.now().strftime("%Y-%m-%d"))
+            pendiente["metodoPago"] = metodo
+            write_json("financiaciones.json", financiaciones)
+            return jsonify(f)
+    return jsonify({"error": "Financiación no encontrada"}), 404
 
 
 # ──────────────────────────────────────────────────────────────
@@ -385,6 +520,12 @@ if __name__ == "__main__":
 
     if not os.path.exists(data_path("vehiculos.json")):
         write_json("vehiculos.json", [])
+
+    if not os.path.exists(data_path("clientes.json")):
+        write_json("clientes.json", [])
+
+    if not os.path.exists(data_path("financiaciones.json")):
+        write_json("financiaciones.json", [])
 
     print(f"\n  🚗  Mauá Automóviles — Panel activo")
     print(f"  →  Sitio:  http://localhost:8765")
