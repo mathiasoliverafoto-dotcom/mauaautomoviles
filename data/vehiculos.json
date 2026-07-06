@@ -75,7 +75,7 @@
     "marca": "Renault",
     "modelo": "Logan",
     "version": "1.6 Authentique",
-    "condicion": "usado",
+    "condicion": "vendido",
     "carroceria": "Sedán",
     "anio": 2019,
     "km": 61000,
@@ -92,7 +92,8 @@
       "assets/img/vehiculos/logan-2019-3.webp",
       "assets/img/vehiculos/logan-2019-4.webp"
     ],
-    "publicado": true
+    "publicado": false,
+    "ventaId": "vta-26d7fa7a"
   },
   {
     "id": "v-208-2016",

@@ -1,1 +1,71 @@
-[]
+[
+  {
+    "id": "fin-c8f88f91",
+    "ventaId": "vta-26d7fa7a",
+    "clienteId": "cli-a04dd62e",
+    "clienteNombre": "Santiago Echave",
+    "clienteTelefono": "098796372",
+    "vehiculo": "Renault Logan 2019",
+    "montoTotal": 3500,
+    "cantidadCuotas": 7,
+    "valorCuota": 500,
+    "cuotas": [
+      {
+        "numero": 1,
+        "vencimiento": "2026-08-06",
+        "valor": 500,
+        "pagada": true,
+        "fechaPago": "2026-07-06",
+        "metodoPago": "efectivo"
+      },
+      {
+        "numero": 2,
+        "vencimiento": "2026-09-06",
+        "valor": 500,
+        "pagada": false,
+        "fechaPago": null,
+        "metodoPago": null
+      },
+      {
+        "numero": 3,
+        "vencimiento": "2026-10-06",
+        "valor": 500,
+        "pagada": false,
+        "fechaPago": null,
+        "metodoPago": null
+      },
+      {
+        "numero": 4,
+        "vencimiento": "2026-11-06",
+        "valor": 500,
+        "pagada": false,
+        "fechaPago": null,
+        "metodoPago": null
+      },
+      {
+        "numero": 5,
+        "vencimiento": "2026-12-06",
+        "valor": 500,
+        "pagada": false,
+        "fechaPago": null,
+        "metodoPago": null
+      },
+      {
+        "numero": 6,
+        "vencimiento": "2027-01-06",
+        "valor": 500,
+        "pagada": false,
+        "fechaPago": null,
+        "metodoPago": null
+      },
+      {
+        "numero": 7,
+        "vencimiento": "2027-02-06",
+        "valor": 500,
+        "pagada": false,
+        "fechaPago": null,
+        "metodoPago": null
+      }
+    ]
+  }
+]

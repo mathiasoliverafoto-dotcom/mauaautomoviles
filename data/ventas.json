@@ -1,5 +1,31 @@
 [
   {
+    "id": "vta-26d7fa7a",
+    "vehiculoId": "v-logan-2019",
+    "vehiculo": {
+      "marca": "Renault",
+      "modelo": "Logan",
+      "version": "1.6 Authentique",
+      "anio": 2019,
+      "foto": "assets/img/vehiculos/logan-2019.webp"
+    },
+    "sucursal": "Florencio Sánchez 650, Melo",
+    "vendedorId": "vnd-d7c6cc9e",
+    "vendedorNombre": "Juan Olivera",
+    "clienteId": "cli-a04dd62e",
+    "clienteNombre": "Santiago Echave",
+    "precioVenta": 9900,
+    "tomaPago": null,
+    "metodoPago": "efectivo",
+    "montoInicial": 7000,
+    "montoFinanciado": 3500,
+    "financiacionId": "fin-c8f88f91",
+    "ingresoNeto": 7000,
+    "comisionVendedor": 495,
+    "fecha": "2026-07-06",
+    "notas": ""
+  },
+  {
     "id": "vta-21ec34ce",
     "vehiculoId": "v-tiggo7-hybrid",
     "vehiculo": {

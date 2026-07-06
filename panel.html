@@ -105,6 +105,13 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 .veh-list-row:hover { border-color: rgba(255,255,255,.18); }
 .veh-list-row img { width: 56px; height: 40px; object-fit: contain; border-radius: 4px; background: var(--bg-3); }
 .veh-list-row .no-img { width: 56px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--bg-3); border-radius: 4px; color: var(--ink-mute); font-size: .6rem; }
+.cli-list { display: flex; flex-direction: column; gap: .5rem; }
+.cli-list-row { display: grid; grid-template-columns: 1.3fr 1fr 1fr .8fr auto; align-items: center; gap: .8rem; padding: .7rem .9rem; background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; font-size: .85rem; }
+.cli-list-row:hover { border-color: rgba(255,255,255,.18); }
+.cli-list-row .cl-name { font-weight: 600; }
+.cli-list-row .cl-detail { color: var(--ink-soft); font-size: .82rem; }
+.cli-list-row .cl-actions { display: flex; gap: .4rem; justify-content: flex-end; }
+.cli-list-head { display: grid; grid-template-columns: 1.3fr 1fr 1fr .8fr auto; gap: .8rem; padding: 0 .9rem; margin-bottom: .3rem; color: var(--ink-mute); font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; }
 .veh-list-name { font-weight: 600; }
 .veh-list-sub { color: var(--ink-soft); font-size: .78rem; }
 .veh-list-price { font-weight: 700; }
@@ -217,6 +224,8 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   .main { margin-left: 0; padding: 1rem 1rem 5.5rem; }
   .form-row, .form-row.triple { grid-template-columns: 1fr; }
   .veh-list-row { grid-template-columns: 1fr; gap: .4rem; }
+  .cli-list-row { grid-template-columns: 1fr; gap: .3rem; }
+  .cli-list-head { display: none; }
   .fin-tabs { flex-wrap: wrap; }
 }
 </style>
@@ -308,7 +317,8 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
         <h2>Clientes</h2>
         <button class="btn btn-primary" onclick="openCliModal()">+ Nuevo cliente</button>
       </div>
-      <div id="clientesGrid" class="personal-grid"></div>
+      <div class="cli-list-head"><span>Nombre y apellido</span><span>Teléfono</span><span>Dirección</span><span>Nacimiento</span><span></span></div>
+      <div id="clientesGrid" class="cli-list"></div>
     </div>
 
     <!-- ═══ COBRANZAS ═══ -->
@@ -767,12 +777,12 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     var grid=document.getElementById("clientesGrid");
     if(!clientes.length){grid.innerHTML='<div class="no-sales">No hay clientes cargados</div>';return;}
     grid.innerHTML=clientes.map(function(c){
-      return '<div class="personal-card">'+
-        '<div class="pc-name">'+esc(c.nombre)+'</div>'+
-        (c.telefono?'<div class="pc-detail">📞 '+esc(c.telefono)+'</div>':'')+
-        (c.direccion?'<div class="pc-detail">📍 '+esc(c.direccion)+'</div>':'')+
-        (c.fechaNacimiento?'<div class="pc-detail">🎂 '+esc(c.fechaNacimiento)+'</div>':'')+
-        '<div class="pc-actions">'+
+      return '<div class="cli-list-row">'+
+        '<span class="cl-name">'+esc(c.nombre)+'</span>'+
+        '<span class="cl-detail">'+(c.telefono?esc(c.telefono):'—')+'</span>'+
+        '<span class="cl-detail">'+(c.direccion?esc(c.direccion):'—')+'</span>'+
+        '<span class="cl-detail">'+(c.fechaNacimiento?esc(c.fechaNacimiento):'—')+'</span>'+
+        '<div class="cl-actions">'+
           '<button class="btn btn-outline btn-sm" onclick="editCliente(\''+c.id+'\')">Editar</button>'+
           '<button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="confirmDeleteCli(\''+c.id+'\')">Eliminar</button>'+
         '</div></div>';
