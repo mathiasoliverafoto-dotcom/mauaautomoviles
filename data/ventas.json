@@ -1,5 +1,31 @@
 [
   {
+    "id": "vta-2a121d13",
+    "vehiculoId": "v-208-2016",
+    "vehiculo": {
+      "marca": "Peugeot",
+      "modelo": "208",
+      "version": "1.2 Active",
+      "anio": 2016,
+      "foto": "assets/img/vehiculos/peugeot-208-2016.webp"
+    },
+    "sucursal": "Florencio Sánchez 650, Melo",
+    "vendedorId": "vnd-admin",
+    "vendedorNombre": "Administrador",
+    "clienteId": "cli-a04dd62e",
+    "clienteNombre": "Santiago Echave",
+    "precioVenta": 8900,
+    "tomaPago": null,
+    "metodoPago": "efectivo",
+    "montoInicial": 7000,
+    "montoFinanciado": 2200,
+    "financiacionId": "fin-f06196cc",
+    "ingresoNeto": 7000,
+    "comisionVendedor": 0,
+    "fecha": "2026-07-06",
+    "notas": ""
+  },
+  {
     "id": "vta-26d7fa7a",
     "vehiculoId": "v-logan-2019",
     "vehiculo": {

@@ -548,6 +548,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   function api(url, opts) { return fetch(url, opts).then(function(r) { if (r.ok) return r.json(); return r.json().then(function(d){throw new Error(d.error||"Error");}); }); }
   function toast(msg, type) { var el=document.getElementById("toast"); el.textContent=msg; el.className="toast toast-"+(type||"ok")+" is-visible"; clearTimeout(el._t); el._t=setTimeout(function(){el.classList.remove("is-visible");},3000); }
   function today() { var d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+  function fmtD(iso) { if(!iso) return ""; var p=iso.split("-"); return p.length===3?(p[2]+"/"+p[1]+"/"+p[0]):iso; }
 
   // ── Auth ────────────────────────────
   function checkAuth() {
@@ -781,7 +782,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
         '<span class="cl-name">'+esc(c.nombre)+'</span>'+
         '<span class="cl-detail">'+(c.telefono?esc(c.telefono):'—')+'</span>'+
         '<span class="cl-detail">'+(c.direccion?esc(c.direccion):'—')+'</span>'+
-        '<span class="cl-detail">'+(c.fechaNacimiento?esc(c.fechaNacimiento):'—')+'</span>'+
+        '<span class="cl-detail">'+(c.fechaNacimiento?esc(fmtD(c.fechaNacimiento)):'—')+'</span>'+
         '<div class="cl-actions">'+
           '<button class="btn btn-outline btn-sm" onclick="editCliente(\''+c.id+'\')">Editar</button>'+
           '<button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="confirmDeleteCli(\''+c.id+'\')">Eliminar</button>'+
@@ -985,7 +986,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
         (completa?
           '<div class="cobranza-venc"><div class="cb-fecha" style="color:var(--green-h)">Financiación saldada</div></div>'
           :
-          '<div class="cobranza-venc"><div class="cb-fecha">'+pendiente.vencimiento+'</div><div class="cb-valor">US$ '+fmtN(pendiente.valor)+'</div></div>'+
+          '<div class="cobranza-venc"><div class="cb-fecha">'+fmtD(pendiente.vencimiento)+'</div><div class="cb-valor">US$ '+fmtN(pendiente.valor)+'</div></div>'+
           '<div class="cobranza-actions">'+
             '<a class="btn-wa-mini" href="'+waHref+'" target="_blank" rel="noopener">WhatsApp</a>'+
             '<button class="btn btn-outline btn-sm" onclick="togglePagoBox(\''+f.id+'\')">Registrar pago</button>'+
@@ -1133,7 +1134,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       var imgTag=veh.foto?'<img src="/'+esc(veh.foto)+'">':'';
       var toma=v.tomaPago?('-US$ '+fmtN(v.tomaPago.valor)+'<span class="toma-tag">'+esc(v.tomaPago.descripcion)+'</span>'):'—';
       var saldoTxt=v.montoFinanciado>0?(' <span class="toma-tag" style="background:var(--blue)">financia US$ '+fmtN(v.montoFinanciado)+'</span>'):'';
-      html+='<tr><td>'+v.fecha+'</td><td><div class="td-veh">'+imgTag+'<span>'+esc(veh.marca)+' '+esc(veh.modelo)+' '+veh.anio+'</span></div></td><td>'+esc(shortSuc(v.sucursal))+'</td><td>'+esc(v.vendedorNombre)+'</td><td>US$ '+fmtN(v.precioVenta)+'</td><td>'+toma+'</td><td><strong>US$ '+fmtN(v.ingresoNeto)+'</strong>'+saldoTxt+'</td><td>'+metodoTxt(v.metodoPago)+'</td><td>US$ '+fmtN(v.comisionVendedor)+'</td></tr>';
+      html+='<tr><td>'+fmtD(v.fecha)+'</td><td><div class="td-veh">'+imgTag+'<span>'+esc(veh.marca)+' '+esc(veh.modelo)+' '+veh.anio+'</span></div></td><td>'+esc(shortSuc(v.sucursal))+'</td><td>'+esc(v.vendedorNombre)+'</td><td>US$ '+fmtN(v.precioVenta)+'</td><td>'+toma+'</td><td><strong>US$ '+fmtN(v.ingresoNeto)+'</strong>'+saldoTxt+'</td><td>'+metodoTxt(v.metodoPago)+'</td><td>US$ '+fmtN(v.comisionVendedor)+'</td></tr>';
     });
     html+='</tbody></table></div>';
 
@@ -1141,7 +1142,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       html+='<h3 style="margin:1.4rem 0 .8rem;font-size:.95rem">Cobros de cuotas en el período</h3>';
       html+='<div style="overflow-x:auto"><table class="sales-table"><thead><tr><th>Fecha</th><th>Cliente</th><th>Vehículo</th><th>Cuota</th><th>Monto</th><th>Forma de pago</th></tr></thead><tbody>';
       filteredCuotas.forEach(function(c){
-        html+='<tr><td>'+c.fecha+'</td><td>'+esc(c.clienteNombre)+'</td><td>'+esc(c.vehiculo)+'</td><td>'+c.numero+'/'+c.cantidadCuotas+'</td><td><strong>US$ '+fmtN(c.monto)+'</strong></td><td>'+metodoTxt(c.metodoPago)+'</td></tr>';
+        html+='<tr><td>'+fmtD(c.fecha)+'</td><td>'+esc(c.clienteNombre)+'</td><td>'+esc(c.vehiculo)+'</td><td>'+c.numero+'/'+c.cantidadCuotas+'</td><td><strong>US$ '+fmtN(c.monto)+'</strong></td><td>'+metodoTxt(c.metodoPago)+'</td></tr>';
       });
       html+='</tbody></table></div>';
     }

@@ -100,7 +100,7 @@
     "marca": "Peugeot",
     "modelo": "208",
     "version": "1.2 Active",
-    "condicion": "usado",
+    "condicion": "vendido",
     "carroceria": "Hatch",
     "anio": 2016,
     "km": 82000,
@@ -116,7 +116,9 @@
       "assets/img/vehiculos/peugeot-208-2016-2.webp",
       "assets/img/vehiculos/peugeot-208-2016-3.webp",
       "assets/img/vehiculos/peugeot-208-2016-4.webp"
-    ]
+    ],
+    "publicado": false,
+    "ventaId": "vta-2a121d13"
   },
   {
     "id": "v-saveiro-cross-18",
