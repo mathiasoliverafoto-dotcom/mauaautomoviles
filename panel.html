@@ -355,6 +355,14 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
         <h2>Clientes</h2>
         <button class="btn btn-primary" onclick="openCliModal()">+ Nuevo cliente</button>
       </div>
+      <div class="veh-filters" style="margin-bottom:1rem">
+        <select id="cliBuscarPor" onchange="onCliBuscarPorChange()">
+          <option value="nombre">Buscar por nombre</option>
+          <option value="telefono">Buscar por celular</option>
+        </select>
+        <input type="search" id="cliBuscar" placeholder="Escribí un nombre…" oninput="renderClientes()" style="min-width:220px;flex:1 1 220px">
+        <span class="vf-count" id="cliCount"></span>
+      </div>
       <div class="cli-list-head"><span>Nombre y apellido</span><span>Teléfono</span><span>Dirección</span><span>Nacimiento</span><span></span></div>
       <div id="clientesGrid" class="cli-list"></div>
     </div>
@@ -995,10 +1003,30 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   };
 
   // ── Clientes ─────────────────────────
+  window.onCliBuscarPorChange=function(){
+    var por=document.getElementById("cliBuscarPor").value;
+    document.getElementById("cliBuscar").placeholder=por==="telefono"?"Escribí un celular…":"Escribí un nombre…";
+    renderClientes();
+  };
   function renderClientes(){
     var grid=document.getElementById("clientesGrid");
-    if(!clientes.length){grid.innerHTML='<div class="no-sales">No hay clientes cargados</div>';return;}
-    grid.innerHTML=clientes.map(function(c){
+    var countEl=document.getElementById("cliCount");
+    if(!clientes.length){grid.innerHTML='<div class="no-sales">No hay clientes cargados</div>';if(countEl)countEl.textContent="";return;}
+    var por=document.getElementById("cliBuscarPor").value;
+    var q=(document.getElementById("cliBuscar").value||"").trim().toLowerCase();
+    var lista=clientes;
+    if(q){
+      lista=clientes.filter(function(c){
+        if(por==="telefono"){
+          var qd=q.replace(/\D/g,"");
+          return qd?((c.telefono||"").replace(/\D/g,"").indexOf(qd)>-1):((c.telefono||"").toLowerCase().indexOf(q)>-1);
+        }
+        return (c.nombre||"").toLowerCase().indexOf(q)>-1;
+      });
+    }
+    if(countEl) countEl.textContent=q?(lista.length+" de "+clientes.length):"";
+    if(!lista.length){grid.innerHTML='<div class="no-sales">Ningún cliente coincide con la búsqueda</div>';return;}
+    grid.innerHTML=lista.map(function(c){
       return '<div class="cli-list-row">'+
         '<span class="cl-name">'+esc(c.nombre)+'</span>'+
         '<span class="cl-detail">'+(c.telefono?esc(c.telefono):'—')+'</span>'+
