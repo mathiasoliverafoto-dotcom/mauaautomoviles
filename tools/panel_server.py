@@ -58,6 +58,18 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated
 
+def require_roles(*roles):
+    def deco(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            if not session.get("user"):
+                return jsonify({"error": "No autorizado"}), 401
+            if session.get("rol", "admin_general") not in roles:
+                return jsonify({"error": "No tenés permiso para esta acción"}), 403
+            return f(*args, **kwargs)
+        return wrapper
+    return deco
+
 
 # ──────────────────────────────────────────────────────────────
 # Sitio estático
@@ -90,7 +102,10 @@ def api_login():
         if u["username"] == username and u["password"] == pw_hash:
             session["user"] = username
             session["nombre"] = u.get("nombre", username)
-            return jsonify({"ok": True, "nombre": u.get("nombre", username)})
+            session["rol"] = u.get("rol", "admin_general")
+            session["sucursal"] = u.get("sucursal", "")
+            return jsonify({"ok": True, "nombre": u.get("nombre", username),
+                            "rol": session["rol"], "sucursal": session["sucursal"]})
 
     return jsonify({"error": "Usuario o contraseña incorrectos"}), 401
 
@@ -102,7 +117,9 @@ def api_logout():
 @app.route("/api/me")
 def api_me():
     if session.get("user"):
-        return jsonify({"user": session["user"], "nombre": session.get("nombre", "")})
+        return jsonify({"user": session["user"], "nombre": session.get("nombre", ""),
+                        "rol": session.get("rol", "admin_general"),
+                        "sucursal": session.get("sucursal", "")})
     return jsonify({"user": None}), 401
 
 
@@ -175,7 +192,7 @@ def api_vehiculos_update(vid):
     return jsonify({"error": "Vehículo no encontrado"}), 404
 
 @app.route("/api/vehiculos/<vid>", methods=["DELETE"])
-@login_required
+@require_roles("admin_general", "admin_sucursal")
 def api_vehiculos_delete(vid):
     vehiculos = read_json("vehiculos.json")
     original_len = len(vehiculos)
@@ -232,7 +249,7 @@ def api_vendedores_list():
     return jsonify(read_json("vendedores.json"))
 
 @app.route("/api/vendedores", methods=["POST"])
-@login_required
+@require_roles("admin_general")
 def api_vendedores_create():
     body = request.get_json(silent=True) or {}
     vendedores = read_json("vendedores.json")
@@ -249,7 +266,7 @@ def api_vendedores_create():
     return jsonify(nuevo), 201
 
 @app.route("/api/vendedores/<vid>", methods=["PUT"])
-@login_required
+@require_roles("admin_general")
 def api_vendedores_update(vid):
     body = request.get_json(silent=True) or {}
     vendedores = read_json("vendedores.json")
@@ -267,7 +284,7 @@ def api_vendedores_update(vid):
     return jsonify({"error": "Vendedor no encontrado"}), 404
 
 @app.route("/api/vendedores/<vid>", methods=["DELETE"])
-@login_required
+@require_roles("admin_general")
 def api_vendedores_delete(vid):
     vendedores = read_json("vendedores.json")
     original = len(vendedores)
@@ -334,9 +351,14 @@ def api_clientes_delete(cid):
 # ──────────────────────────────────────────────────────────────
 
 @app.route("/api/ventas", methods=["GET"])
-@login_required
+@require_roles("admin_general", "admin_sucursal")
 def api_ventas_list():
-    return jsonify(read_json("ventas.json"))
+    ventas = read_json("ventas.json")
+    # El administrador de sucursal solo ve las ventas de su sucursal.
+    if session.get("rol") == "admin_sucursal":
+        suc = session.get("sucursal", "")
+        ventas = [v for v in ventas if v.get("sucursal", "") == suc]
+    return jsonify(ventas)
 
 def _sumar_meses(fecha_str, n):
     y, m, d = [int(x) for x in fecha_str.split("-")]
@@ -465,12 +487,12 @@ def api_ventas_create():
 # ──────────────────────────────────────────────────────────────
 
 @app.route("/api/financiaciones", methods=["GET"])
-@login_required
+@require_roles("admin_general", "admin_sucursal")
 def api_financiaciones_list():
     return jsonify(read_json("financiaciones.json"))
 
 @app.route("/api/financiaciones/<fid>/pagar", methods=["POST"])
-@login_required
+@require_roles("admin_general", "admin_sucursal")
 def api_financiaciones_pagar(fid):
     body = request.get_json(silent=True) or {}
     metodo = body.get("metodoPago", "efectivo")
@@ -486,6 +508,73 @@ def api_financiaciones_pagar(fid):
             write_json("financiaciones.json", financiaciones)
             return jsonify(f)
     return jsonify({"error": "Financiación no encontrada"}), 404
+
+
+# ──────────────────────────────────────────────────────────────
+# Usuarios (login + roles) — solo administrador general
+# ──────────────────────────────────────────────────────────────
+
+ROLES_VALIDOS = {"admin_general", "admin_sucursal", "vendedor"}
+
+def _usuario_publico(u):
+    return {
+        "username": u.get("username", ""),
+        "nombre": u.get("nombre", ""),
+        "rol": u.get("rol", "admin_general"),
+        "sucursal": u.get("sucursal", ""),
+    }
+
+@app.route("/api/usuarios", methods=["GET"])
+@require_roles("admin_general")
+def api_usuarios_list():
+    return jsonify([_usuario_publico(u) for u in read_json("usuarios.json")])
+
+@app.route("/api/usuarios", methods=["POST"])
+@require_roles("admin_general")
+def api_usuarios_create():
+    body = request.get_json(silent=True) or {}
+    username = body.get("username", "").strip().lower()
+    password = body.get("password", "")
+    nombre = body.get("nombre", "").strip()
+    rol = body.get("rol", "vendedor")
+    sucursal = body.get("sucursal", "").strip()
+
+    if not username or not password:
+        return jsonify({"error": "Usuario y contraseña son obligatorios"}), 400
+    if rol not in ROLES_VALIDOS:
+        return jsonify({"error": "Rol inválido"}), 400
+    if rol in ("admin_sucursal", "vendedor") and not sucursal:
+        return jsonify({"error": "Elegí una sucursal para este rol"}), 400
+
+    usuarios = read_json("usuarios.json")
+    if any(u["username"] == username for u in usuarios):
+        return jsonify({"error": "Ese nombre de usuario ya existe"}), 400
+
+    nuevo = {
+        "username": username,
+        "password": hashlib.sha256(password.encode()).hexdigest(),
+        "nombre": nombre or username,
+        "rol": rol,
+        "sucursal": "" if rol == "admin_general" else sucursal,
+    }
+    usuarios.append(nuevo)
+    write_json("usuarios.json", usuarios)
+    return jsonify(_usuario_publico(nuevo)), 201
+
+@app.route("/api/usuarios/<username>", methods=["DELETE"])
+@require_roles("admin_general")
+def api_usuarios_delete(username):
+    username = username.strip().lower()
+    if username == session.get("user"):
+        return jsonify({"error": "No podés eliminar tu propio usuario"}), 400
+    usuarios = read_json("usuarios.json")
+    quedan = [u for u in usuarios if u["username"] != username]
+    if len(quedan) == len(usuarios):
+        return jsonify({"error": "Usuario no encontrado"}), 404
+    if not any(u.get("rol", "admin_general") == "admin_general" for u in quedan):
+        return jsonify({"error": "Tiene que quedar al menos un administrador general"}), 400
+    write_json("usuarios.json", quedan)
+    return jsonify({"ok": True})
 
 
 # ──────────────────────────────────────────────────────────────
@@ -524,8 +613,18 @@ if __name__ == "__main__":
 
     if not os.path.exists(data_path("usuarios.json")):
         pw = hashlib.sha256("maua2026".encode()).hexdigest()
-        write_json("usuarios.json", [{"username": "admin", "password": pw, "nombre": "Administrador"}])
+        write_json("usuarios.json", [{"username": "admin", "password": pw, "nombre": "Administrador",
+                                      "rol": "admin_general", "sucursal": ""}])
         print("  → Usuario creado: admin / maua2026")
+    else:
+        # Migración: usuarios viejos sin rol pasan a administrador general.
+        _users = read_json("usuarios.json")
+        _changed = False
+        for _u in _users:
+            if "rol" not in _u:
+                _u["rol"] = "admin_general"; _u.setdefault("sucursal", ""); _changed = True
+        if _changed:
+            write_json("usuarios.json", _users)
 
     if not os.path.exists(data_path("vehiculos.json")):
         write_json("vehiculos.json", [])
