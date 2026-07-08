@@ -82,6 +82,8 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 .stat-card .stat-label { font-size: .72rem; color: var(--ink-mute); text-transform: uppercase; letter-spacing: .08em; margin-top: .15rem; }
 
 /* ── Grid de vehículos ─────────────────── */
+/* ── Calculadora ── */
+.calc-card { background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.5rem; max-width: 760px; }
 /* ── Detalle de vehículo (modal) ── */
 .vd-main { width: 100%; aspect-ratio: 4/3; background: var(--bg-3); border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; color: var(--ink-mute); font-size: .85rem; }
 .vd-main img { width: 100%; height: 100%; object-fit: contain; }
@@ -276,7 +278,11 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   <aside class="sidebar">
     <div class="sidebar-brand"><img src="assets/img/logo-mark.svg" alt=""><span>Mauá Panel</span></div>
     <nav class="sidebar-nav">
-      <button data-nav="vehiculos" class="is-active" onclick="switchSection('vehiculos')">
+      <button data-nav="calculadora" class="is-active" onclick="switchSection('calculadora')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/></svg>
+        Calculadora
+      </button>
+      <button data-nav="vehiculos" onclick="switchSection('vehiculos')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
         Vehículos
       </button>
@@ -309,8 +315,29 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   </aside>
 
   <main class="main">
+    <!-- ═══ CALCULADORA ═══ -->
+    <div class="section is-active" id="secCalculadora">
+      <div class="main-header">
+        <h2>Calculadora de financiación</h2>
+        <span style="font-size:.8rem;color:var(--ink-mute)">Interés 1,5% mensual</span>
+      </div>
+      <div class="fin-tabs" style="margin-bottom:1.2rem">
+        <button class="is-active" id="calcTabCuota" onclick="setCalcMode('cuota',this)">Saldo + cuotas → valor de cuota</button>
+        <button id="calcTabCant" onclick="setCalcMode('cantidad',this)">Cuánto puede pagar → cantidad de cuotas</button>
+      </div>
+      <div class="calc-card">
+        <div class="form-row triple">
+          <div class="form-group"><label>Saldo a financiar (US$)</label><input type="number" id="calcSaldo" min="0" oninput="runCalc()" placeholder="15000"></div>
+          <div class="form-group" id="calcCuotasGroup"><label>Cantidad de cuotas</label><input type="number" id="calcCuotas" min="1" max="120" value="12" oninput="runCalc()"></div>
+          <div class="form-group" id="calcPagoGroup" style="display:none"><label>Cuota que puede pagar (US$)</label><input type="number" id="calcPago" min="0" oninput="runCalc()" placeholder="10000"></div>
+        </div>
+        <div id="calcResultado"></div>
+        <p style="font-size:.75rem;color:var(--ink-mute);margin-top:1rem">Cálculo estimativo con cuota fija (sistema francés) al 1,5% mensual. Los montos se redondean; el valor final puede ajustarse al cerrar la venta.</p>
+      </div>
+    </div>
+
     <!-- ═══ VEHÍCULOS ═══ -->
-    <div class="section is-active" id="secVehiculos">
+    <div class="section" id="secVehiculos">
       <div class="stats-row" id="stats"></div>
       <div class="main-header">
         <h2>Vehículos</h2>
@@ -669,9 +696,9 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   var cliModalContext = null;
   var currentUser = { rol: "admin_general", sucursal: "" };
   var PERMS = {
-    admin_general:  { vehiculos:1, clientes:1, personal:1, cobranzas:1, finanzas:1, usuarios:1, borrarVeh:1 },
-    admin_sucursal: { vehiculos:1, clientes:1, cobranzas:1, finanzas:1, borrarVeh:1 },
-    vendedor:       { vehiculos:1, clientes:1 }
+    admin_general:  { calculadora:1, vehiculos:1, clientes:1, personal:1, cobranzas:1, finanzas:1, usuarios:1, borrarVeh:1 },
+    admin_sucursal: { calculadora:1, vehiculos:1, clientes:1, cobranzas:1, finanzas:1, borrarVeh:1 },
+    vendedor:       { calculadora:1, vehiculos:1, clientes:1 }
   };
   function can(x){ return !!(PERMS[currentUser.rol]||PERMS.vendedor)[x]; }
   var ROL_LABEL = { admin_general:"Administrador general", admin_sucursal:"Administrador de sucursal", vendedor:"Vendedor" };
@@ -684,6 +711,54 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   function toast(msg, type) { var el=document.getElementById("toast"); el.textContent=msg; el.className="toast toast-"+(type||"ok")+" is-visible"; clearTimeout(el._t); el._t=setTimeout(function(){el.classList.remove("is-visible");},3000); }
   function today() { var d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
   function fmtD(iso) { if(!iso) return ""; var p=iso.split("-"); return p.length===3?(p[2]+"/"+p[1]+"/"+p[0]):iso; }
+
+  // ── Calculadora de financiación (1,5% mensual, cuota fija) ──
+  var TASA_MENSUAL=0.015, calcMode="cuota";
+  function cuotaFija(saldo,n){ if(n<=0)return 0; return TASA_MENSUAL===0?(saldo/n):(saldo*TASA_MENSUAL/(1-Math.pow(1+TASA_MENSUAL,-n))); }
+  window.setCalcMode=function(mode,btn){
+    calcMode=mode;
+    document.querySelectorAll("#secCalculadora .fin-tabs button").forEach(function(b){b.classList.remove("is-active");});
+    if(btn)btn.classList.add("is-active");
+    document.getElementById("calcCuotasGroup").style.display=(mode==="cuota")?"":"none";
+    document.getElementById("calcPagoGroup").style.display=(mode==="cantidad")?"":"none";
+    runCalc();
+  };
+  window.runCalc=function(){
+    var out=document.getElementById("calcResultado"); if(!out) return;
+    var saldo=parseFloat(document.getElementById("calcSaldo").value||0);
+    if(!saldo||saldo<=0){ out.innerHTML='<div class="no-sales">Ingresá el saldo a financiar.</div>'; return; }
+    if(calcMode==="cuota"){
+      var n=parseInt(document.getElementById("calcCuotas").value||0);
+      if(!n||n<=0){ out.innerHTML='<div class="no-sales">Ingresá la cantidad de cuotas.</div>'; return; }
+      var c=cuotaFija(saldo,n), total=c*n;
+      out.innerHTML='<div class="stats-row" style="margin-top:1.2rem">'+
+        statC(n+(n===1?" cuota":" cuotas"),"Cantidad")+
+        statC("US$ "+fmtN(Math.round(c)),"Valor de cada cuota")+
+        statC("US$ "+fmtN(Math.round(total)),"Total a pagar")+
+        statC("US$ "+fmtN(Math.round(total-saldo)),"Interés")+
+        '</div>';
+    } else {
+      var pago=parseFloat(document.getElementById("calcPago").value||0);
+      if(!pago||pago<=0){ out.innerHTML='<div class="no-sales">Ingresá cuánto puede pagar por mes.</div>'; return; }
+      var interesMensual=saldo*TASA_MENSUAL;
+      if(pago<=interesMensual){
+        out.innerHTML='<div class="no-sales" style="color:var(--amber)">Con US$ '+fmtN(Math.round(pago))+' por mes no se cubre ni el interés del primer mes (US$ '+fmtN(Math.round(interesMensual))+'). Subí el valor de la cuota.</div>';
+        return;
+      }
+      var nExact=-Math.log(1-saldo*TASA_MENSUAL/pago)/Math.log(1+TASA_MENSUAL);
+      var base=Math.max(1,Math.round(nExact)), ops=[];
+      for(var k=Math.max(1,base-2);k<=base+2;k++){ ops.push(k); }
+      var mejor=ops.reduce(function(a,b){return Math.abs(cuotaFija(saldo,b)-pago)<Math.abs(cuotaFija(saldo,a)-pago)?b:a;});
+      var html='<p style="margin:1.2rem 0 .6rem;color:var(--ink-soft);font-size:.88rem">Opciones cercanas a <strong>US$ '+fmtN(Math.round(pago))+'</strong> por mes (la ★ es la más parecida):</p>'+
+        '<div style="overflow-x:auto"><table class="sales-table"><thead><tr><th>Cuotas</th><th>Valor de cada cuota</th><th>Total a pagar</th><th>Interés</th></tr></thead><tbody>';
+      ops.forEach(function(k){
+        var c2=cuotaFija(saldo,k), t2=c2*k, hl=(k===mejor);
+        html+='<tr'+(hl?' style="background:rgba(226,32,44,.12)"':'')+'><td><strong>'+k+'</strong></td><td>US$ '+fmtN(Math.round(c2))+(hl?' ★':'')+'</td><td>US$ '+fmtN(Math.round(t2))+'</td><td>US$ '+fmtN(Math.round(t2-saldo))+'</td></tr>';
+      });
+      html+='</tbody></table></div>';
+      out.innerHTML=html;
+    }
+  };
 
   // ── Auth ────────────────────────────
   function checkAuth() {
@@ -728,6 +803,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     if(name==="clientes") renderClientes();
     if(name==="cobranzas") renderCobranzas();
     if(name==="usuarios") renderUsuarios();
+    if(name==="calculadora") runCalc();
   };
 
   // ── Load all data (según permisos del rol) ──
@@ -737,7 +813,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     Promise.all([api("/api/vehiculos"),api("/api/vendedores"),pVentas,api("/api/clientes"),pFin]).then(function(res){
       vehiculos=res[0]; vendedores=res[1]; ventas=res[2]; clientes=res[3]; financiaciones=res[4];
       initFinDefaults();
-      renderVehiculos(); renderClientes();
+      renderVehiculos(); renderClientes(); runCalc();
       if(can("personal")) renderPersonal();
       if(can("finanzas")) renderFinanzas();
       if(can("cobranzas")) renderCobranzas();
