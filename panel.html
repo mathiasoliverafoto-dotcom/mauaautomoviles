@@ -1427,16 +1427,16 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       return;
     }
 
+    // Las comisiones se calculan y se guardan, pero no se muestran.
     var resumen='<div class="stats-row" style="margin-bottom:1rem">'+
       statC(filteredVentas.length,"Ventas")+
       statC("US$ "+fmtN(ingresoTotal),"Ingreso neto (caja)")+
-      statC("US$ "+fmtN(sumCom(filteredVentas)),"Comisiones")+
       statC("US$ "+fmtN(sumTomas(filteredVentas)),"En tomas")+
       '</div>';
 
     function shortSuc(s){if(!s)return'—';var p=s.split(',');return p[p.length-1].trim();}
     function metodoTxt(m){return m==="transferencia"?"Transferencia":(m==="financiacion_bancaria"?"Financiación bancaria":"Efectivo");}
-    var html=resumen+'<div style="overflow-x:auto"><table class="sales-table"><thead><tr><th>Fecha</th><th>Vehículo</th><th>Sucursal</th><th>Vendedor</th><th>Precio (venta)</th><th>Toma</th><th>Recibido</th><th>Forma de pago</th><th>Comisión</th></tr></thead><tbody>';
+    var html=resumen+'<div style="overflow-x:auto"><table class="sales-table"><thead><tr><th>Fecha</th><th>Vehículo</th><th>Sucursal</th><th>Vendedor</th><th>Precio (venta)</th><th>Toma</th><th>Recibido</th><th>Forma de pago</th></tr></thead><tbody>';
     filteredVentas.forEach(function(v){
       var veh=v.vehiculo||{};
       var imgTag=veh.foto?'<img src="/'+esc(veh.foto)+'">':'';
@@ -1448,7 +1448,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
         var pct=Math.round((pub-v.precioVenta)/pub*100);
         precioCell='<strong>US$ '+fmtN(v.precioVenta)+'</strong><div style="font-size:.72rem;color:var(--ink-mute)">pub. US$ '+fmtN(pub)+' · <span style="color:var(--amber)">-'+pct+'%</span></div>';
       }
-      html+='<tr><td>'+fmtD(v.fecha)+'</td><td><div class="td-veh">'+imgTag+'<span>'+esc(veh.marca)+' '+esc(veh.modelo)+' '+veh.anio+'</span></div></td><td>'+esc(shortSuc(v.sucursal))+'</td><td>'+esc(v.vendedorNombre)+'</td><td>'+precioCell+'</td><td>'+toma+'</td><td><strong>US$ '+fmtN(v.ingresoNeto)+'</strong>'+saldoTxt+'</td><td>'+metodoTxt(v.metodoPago)+'</td><td>US$ '+fmtN(v.comisionVendedor)+'</td></tr>';
+      html+='<tr><td>'+fmtD(v.fecha)+'</td><td><div class="td-veh">'+imgTag+'<span>'+esc(veh.marca)+' '+esc(veh.modelo)+' '+veh.anio+'</span></div></td><td>'+esc(shortSuc(v.sucursal))+'</td><td>'+esc(v.vendedorNombre)+'</td><td>'+precioCell+'</td><td>'+toma+'</td><td><strong>US$ '+fmtN(v.ingresoNeto)+'</strong>'+saldoTxt+'</td><td>'+metodoTxt(v.metodoPago)+'</td></tr>';
     });
     html+='</tbody></table></div>';
 
