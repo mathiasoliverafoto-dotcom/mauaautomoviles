@@ -158,11 +158,30 @@ def api_vehiculos_create():
         "fechaIngreso": body.get("fechaIngreso", datetime.now().strftime("%Y-%m-%d")),
         "fotos": body.get("fotos", []),
         "publicado": body.get("publicado", True),
+        "creadoPor": session.get("nombre") or session.get("user", ""),
+        "creadoEn": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "historial": [],
     }
 
     vehiculos.insert(0, nuevo)
     write_json("vehiculos.json", vehiculos)
     return jsonify(nuevo), 201
+
+
+# Etiquetas legibles para el historial de cambios de un vehículo.
+CAMPO_LABEL = {
+    "marca": "Marca", "modelo": "Modelo", "version": "Versión",
+    "condicion": "Condición", "etiqueta": "Etiqueta", "carroceria": "Carrocería",
+    "tipoMotor": "Combustible", "transmision": "Transmisión", "traccion": "Tracción",
+    "ubicacion": "Sucursal", "fechaIngreso": "Fecha de ingreso",
+    "anio": "Año", "km": "Kilómetros", "precio": "Precio",
+    "primerDueno": "Primer dueño", "publicado": "Publicado",
+}
+
+def _fmt_val(campo, val):
+    if campo == "primerDueno" or campo == "publicado":
+        return "Sí" if val else "No"
+    return str(val)
 
 @app.route("/api/vehiculos/<vid>", methods=["PUT"])
 @login_required
@@ -172,19 +191,40 @@ def api_vehiculos_update(vid):
 
     for i, v in enumerate(vehiculos):
         if v["id"] == vid:
+            cambios = []
+            def registrar(campo, nuevo):
+                viejo = vehiculos[i].get(campo)
+                if viejo != nuevo:
+                    cambios.append({"campo": CAMPO_LABEL.get(campo, campo),
+                                    "antes": _fmt_val(campo, viejo),
+                                    "despues": _fmt_val(campo, nuevo)})
+                    vehiculos[i][campo] = nuevo
+
             for key in ["marca", "modelo", "version", "condicion", "etiqueta", "carroceria",
                         "tipoMotor", "transmision", "traccion", "ubicacion", "fechaIngreso"]:
                 if key in body:
-                    vehiculos[i][key] = body[key].strip() if isinstance(body[key], str) else body[key]
+                    registrar(key, body[key].strip() if isinstance(body[key], str) else body[key])
             for key in ["anio", "km", "precio"]:
                 if key in body:
-                    vehiculos[i][key] = int(body[key])
+                    registrar(key, int(body[key]))
             if "primerDueno" in body:
-                vehiculos[i]["primerDueno"] = bool(body["primerDueno"])
+                registrar("primerDueno", bool(body["primerDueno"]))
             if "publicado" in body:
-                vehiculos[i]["publicado"] = bool(body["publicado"])
+                registrar("publicado", bool(body["publicado"]))
             if "fotos" in body:
-                vehiculos[i]["fotos"] = body["fotos"]
+                old_fotos = vehiculos[i].get("fotos", [])
+                if old_fotos != body["fotos"]:
+                    cambios.append({"campo": "Fotos",
+                                    "antes": f"{len(old_fotos)} foto(s)",
+                                    "despues": f"{len(body['fotos'])} foto(s)"})
+                    vehiculos[i]["fotos"] = body["fotos"]
+
+            if cambios:
+                vehiculos[i].setdefault("historial", []).append({
+                    "usuario": session.get("nombre") or session.get("user", ""),
+                    "fecha": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                    "cambios": cambios,
+                })
 
             write_json("vehiculos.json", vehiculos)
             return jsonify(vehiculos[i])
@@ -590,7 +630,8 @@ def public_vehiculos():
     for v in vehiculos:
         if not v.get("publicado", True):
             continue
-        publicados.append({k: val for k, val in v.items() if k not in ("precio", "km")})
+        oculto = ("precio", "km", "creadoPor", "creadoEn", "historial")
+        publicados.append({k: val for k, val in v.items() if k not in oculto})
     return jsonify(publicados)
 
 

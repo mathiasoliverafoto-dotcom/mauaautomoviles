@@ -82,6 +82,23 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 .stat-card .stat-label { font-size: .72rem; color: var(--ink-mute); text-transform: uppercase; letter-spacing: .08em; margin-top: .15rem; }
 
 /* ── Grid de vehículos ─────────────────── */
+/* ── Detalle de vehículo (modal) ── */
+.vd-main { width: 100%; aspect-ratio: 4/3; background: var(--bg-3); border-radius: 10px; overflow: hidden; display: flex; align-items: center; justify-content: center; color: var(--ink-mute); font-size: .85rem; }
+.vd-main img { width: 100%; height: 100%; object-fit: contain; }
+.vd-thumbs { display: flex; gap: .4rem; margin-top: .5rem; overflow-x: auto; }
+.vd-thumbs img { width: 58px; height: 44px; object-fit: cover; border-radius: 6px; cursor: pointer; border: 2px solid transparent; flex: none; }
+.vd-thumbs img.is-active { border-color: var(--red); }
+.vd-datos { display: grid; grid-template-columns: repeat(3, 1fr); gap: .6rem .9rem; margin: 1.1rem 0; }
+.vd-item { font-size: .88rem; }
+.vd-item span { color: var(--ink-mute); font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; display: block; margin-bottom: .1rem; }
+.vd-hist { margin-top: .6rem; border-top: 1px solid var(--line); padding-top: .9rem; }
+.vd-hist summary { cursor: pointer; font-size: .82rem; color: var(--ink-soft); font-weight: 600; }
+.vd-hist-entry { font-size: .8rem; color: var(--ink-soft); padding: .5rem 0; border-bottom: 1px solid var(--line); }
+.vd-hist-entry:last-child { border-bottom: none; }
+.vd-hist-meta { color: var(--ink-mute); font-size: .74rem; margin-bottom: .25rem; }
+.vd-hist-cambio { margin-left: .6rem; padding: .1rem 0; }
+.veh-panel-card .card-img, .veh-panel-card .card-body { cursor: pointer; }
+@media (max-width: 620px){ .vd-datos { grid-template-columns: repeat(2, 1fr); } }
 .veh-filters { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-bottom: 1.3rem; }
 .veh-filters input, .veh-filters select { padding: .45rem .6rem; background: var(--bg-3); border: 1px solid var(--line); border-radius: 8px; color: var(--ink); font-size: .82rem; font-family: inherit; }
 .veh-filters select { appearance: none; padding-right: 1.6rem; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239ca3af' fill='none' stroke-width='1.5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right .55rem center; }
@@ -625,6 +642,18 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   </div>
 </div>
 
+<!-- MODAL DETALLE VEHÍCULO -->
+<div class="modal-overlay" id="vehDetOverlay">
+  <div class="modal" style="max-width:660px">
+    <div class="modal-head"><h3 id="vdTitulo">Detalle del vehículo</h3><button class="modal-close" onclick="closeVehDet()">&times;</button></div>
+    <div class="modal-body">
+      <div id="vdGallery"></div>
+      <div class="vd-datos" id="vdDatos"></div>
+      <div id="vdHistorial"></div>
+    </div>
+  </div>
+</div>
+
 <!-- CONFIRM -->
 <div class="confirm-overlay" id="confirmOverlay">
   <div class="confirm-box"><p id="confirmMsg"></p><div class="confirm-btns"><button class="btn btn-outline" onclick="closeConfirm()">Cancelar</button><button class="btn btn-danger" id="confirmYes">Eliminar</button></div></div>
@@ -843,8 +872,8 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   function renderGrid(list){
     return '<div class="veh-grid">'+list.map(function(v){
       var isSold=v.condicion==="vendido";
-      return '<div class="veh-panel-card"><div class="card-img">'+vehStatus(v)+vehImg(v)+'</div>'+
-        '<div class="card-body"><div class="card-title">'+esc(v.marca)+' '+esc(v.modelo)+'</div>'+
+      return '<div class="veh-panel-card"><div class="card-img" onclick="openVehDetail(\''+v.id+'\')" title="Ver detalle">'+vehStatus(v)+vehImg(v)+'</div>'+
+        '<div class="card-body" onclick="openVehDetail(\''+v.id+'\')" title="Ver detalle"><div class="card-title">'+esc(v.marca)+' '+esc(v.modelo)+'</div>'+
         '<div class="card-sub">'+esc(v.carroceria)+' · '+v.anio+' · '+vehKm(v)+'</div>'+
         '<div class="card-price">'+fmtP(v.precio)+'</div></div>'+
         '<div class="card-actions">'+
@@ -861,8 +890,9 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     return '<div class="veh-list">'+list.map(function(v){
       var isSold=v.condicion==="vendido";
       var img=(v.fotos&&v.fotos[0])?'<img src="/'+esc(v.fotos[0])+'">':'<div class="no-img">—</div>';
-      return '<div class="veh-list-row">'+img+
-        '<div><div class="veh-list-name">'+esc(v.marca)+' '+esc(v.modelo)+'</div><div class="veh-list-sub">'+esc(v.version||"")+' · '+v.anio+'</div></div>'+
+      return '<div class="veh-list-row">'+
+        '<div onclick="openVehDetail(\''+v.id+'\')" style="cursor:pointer">'+img+'</div>'+
+        '<div onclick="openVehDetail(\''+v.id+'\')" style="cursor:pointer"><div class="veh-list-name">'+esc(v.marca)+' '+esc(v.modelo)+'</div><div class="veh-list-sub">'+esc(v.version||"")+' · '+v.anio+'</div></div>'+
         '<div class="veh-list-sub">'+esc(v.carroceria)+' · '+vehKm(v)+'</div>'+
         '<div class="veh-list-price">'+fmtP(v.precio)+'</div>'+
         '<div class="veh-list-status">'+vehStatus(v)+'</div>'+
@@ -874,6 +904,55 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
         )+'</div></div>';
     }).join("")+'</div>';
   }
+
+  // ── Detalle de vehículo (fotos + datos + auditoría) ──
+  var vdFotos=[];
+  window.vdSetFoto=function(i){
+    var main=document.getElementById("vdMainImg"); if(main) main.src="/"+vdFotos[i];
+    document.querySelectorAll("#vdGallery .vd-thumbs img").forEach(function(t,ti){t.classList.toggle("is-active",ti===i);});
+  };
+  window.closeVehDet=function(){document.getElementById("vehDetOverlay").classList.remove("is-open");};
+  window.openVehDetail=function(id){
+    var v=vehiculos.find(function(x){return x.id===id;}); if(!v) return;
+    document.getElementById("vdTitulo").textContent=v.marca+" "+v.modelo+" "+v.anio+(v.version?" · "+v.version:"");
+    vdFotos=(v.fotos&&v.fotos.length)?v.fotos:[];
+    var g=document.getElementById("vdGallery");
+    if(vdFotos.length){
+      g.innerHTML='<div class="vd-main"><img id="vdMainImg" src="/'+esc(vdFotos[0])+'" alt=""></div>'+
+        (vdFotos.length>1?'<div class="vd-thumbs">'+vdFotos.map(function(f,i){return '<img src="/'+esc(f)+'" class="'+(i===0?"is-active":"")+'" onclick="vdSetFoto('+i+')" alt="">';}).join("")+'</div>':'');
+    } else { g.innerHTML='<div class="vd-main">Sin fotos cargadas</div>'; }
+
+    function item(label,val){return '<div class="vd-item"><span>'+label+'</span>'+esc(val)+'</div>';}
+    var estado=v.condicion==="vendido"?"Vendido":(v.publicado!==false?"Publicado":"Oculto");
+    document.getElementById("vdDatos").innerHTML=
+      item("Condición", v.condicion==="0km"?"0 km":"Usado")+
+      item("Etiqueta", v.etiqueta||"—")+
+      item("Precio", v.precio>0?("US$ "+fmtN(v.precio)):"Consultar")+
+      item("Kilómetros", v.condicion==="0km"?"0 km":(fmtN(v.km)+" km"))+
+      item("Año", v.anio)+
+      item("Carrocería", v.carroceria)+
+      item("Combustible", v.tipoMotor)+
+      item("Transmisión", v.transmision)+
+      item("Tracción", v.traccion)+
+      item("Sucursal", v.ubicacion)+
+      item("Primer dueño", v.primerDueno?"Sí":"No")+
+      item("Estado", estado);
+
+    var h=document.getElementById("vdHistorial");
+    if(currentUser.rol==="vendedor"){ h.innerHTML=""; }
+    else {
+      var hist=v.historial||[];
+      var creado=v.creadoPor?('Cargado por <strong>'+esc(v.creadoPor)+'</strong>'+(v.creadoEn?' · '+esc(v.creadoEn):'')):'Creación no registrada (vehículo previo al registro de auditoría)';
+      var entries=hist.slice().reverse().map(function(e){
+        var cambios=(e.cambios||[]).map(function(c){return '<div class="vd-hist-cambio">'+esc(c.campo)+': '+esc(c.antes)+' → '+esc(c.despues)+'</div>';}).join("");
+        return '<div class="vd-hist-entry"><div class="vd-hist-meta"><strong>'+esc(e.usuario)+'</strong> editó · '+esc(e.fecha)+'</div>'+cambios+'</div>';
+      }).join("");
+      h.innerHTML='<div class="vd-hist"><div style="font-size:.82rem;color:var(--ink-soft);margin-bottom:.4rem">'+creado+'</div>'+
+        (hist.length?('<details><summary>Ver historial de ediciones ('+hist.length+')</summary><div style="margin-top:.5rem">'+entries+'</div></details>'):'<div style="font-size:.8rem;color:var(--ink-mute)">Sin ediciones registradas.</div>')+
+        '</div>';
+    }
+    document.getElementById("vehDetOverlay").classList.add("is-open");
+  };
 
   // ── Vehículo modal ──────────────────
   window.openVehModal=function(v){
