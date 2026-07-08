@@ -43,13 +43,16 @@
     return (data.whatsapp || "https://wa.me/59892550422") + "?text=" + encodeURIComponent(msg);
   }
 
-  /* ---- Etiqueta de estado (badge visible en la tarjeta) ---- */
+  /* ---- Etiqueta de estado (badge visible en la tarjeta) ----
+     Las etiquetas (Igual a 0km / Buen estado / Usado) solo aplican a
+     usados. Un 0 km se muestra siempre como "0 km". ---- */
   function etiquetaDe(v) {
-    return v.etiqueta || (v.condicion === "usado" ? "Usado" : "Igual a 0km");
+    if (v.condicion !== "usado") return "0 km";
+    return v.etiqueta || "Usado";
   }
   function etiquetaBadge(v) {
     var et = etiquetaDe(v);
-    var cls = et === "Igual a 0km" ? "veh-badge veh-badge-0km" : "veh-badge";
+    var cls = (et === "0 km" || et === "Igual a 0km") ? "veh-badge veh-badge-0km" : "veh-badge";
     return '<span class="' + cls + '">' + escHTML(et) + '</span>';
   }
 
@@ -853,7 +856,7 @@
     if (badgeCond) {
       var etDetalle = etiquetaDe(v);
       badgeCond.textContent = etDetalle;
-      badgeCond.classList.toggle("veh-badge-0km", etDetalle === "Igual a 0km");
+      badgeCond.classList.toggle("veh-badge-0km", etDetalle === "0 km" || etDetalle === "Igual a 0km");
     }
     var badgeReciente = $("[data-pdp-badge-reciente]");
     if (badgeReciente) badgeReciente.hidden = !isReciente(v.fechaIngreso);

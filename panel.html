@@ -694,8 +694,14 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   window.onCondicionChange=function(){
     var es0km=document.getElementById("fCondicion").value==="0km";
     var km=document.getElementById("fKm");
-    if(es0km){ km.value=0; km.disabled=true; km.style.opacity=".5"; }
-    else { km.disabled=false; km.style.opacity=""; }
+    var et=document.getElementById("fEtiqueta");
+    if(es0km){
+      km.value=0; km.disabled=true; km.style.opacity=".5";
+      et.disabled=true; et.style.opacity=".5";
+    } else {
+      km.disabled=false; km.style.opacity="";
+      et.disabled=false; et.style.opacity="";
+    }
   };
 
   window.saveVehiculo=function(){
