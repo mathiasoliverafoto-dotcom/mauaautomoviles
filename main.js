@@ -984,25 +984,33 @@
     });
   }
 
-  /* ---- Mapas: el iframe de Google Maps solo se carga al hacer clic.
-     Dos mapas embebidos corriendo todo el tiempo (aunque no se los mire)
-     son muy pesados para CPU/GPU — por eso no se cargan al abrir la página. ---- */
+  /* ---- Mapas: se cargan solos (sin clic) cuando la sección de sucursales
+     entra en pantalla. Se usa IntersectionObserver para no cargar los 3
+     iframes de Google al abrir la página (arriba de todo), sino recién
+     cuando el usuario baja hasta ellos. ---- */
   function initMapFacades() {
-    $$("[data-map-facade]").forEach(function (box) {
-      var btn = box.querySelector(".local-map-preview");
-      if (!btn) return;
-      btn.addEventListener("click", function () {
-        if (box.dataset.mapLoaded) return;
-        box.dataset.mapLoaded = "1";
-        var iframe = document.createElement("iframe");
-        iframe.src = box.dataset.mapSrc;
-        iframe.title = box.dataset.mapTitle || "Mapa";
-        iframe.loading = "lazy";
-        iframe.referrerPolicy = "no-referrer-when-downgrade";
-        box.innerHTML = "";
-        box.appendChild(iframe);
+    var boxes = $$("[data-map-facade]");
+    if (!boxes.length) return;
+    function loadMap(box) {
+      if (box.dataset.mapLoaded) return;
+      box.dataset.mapLoaded = "1";
+      var iframe = document.createElement("iframe");
+      iframe.src = box.dataset.mapSrc;
+      iframe.title = box.dataset.mapTitle || "Mapa";
+      iframe.loading = "lazy";
+      iframe.referrerPolicy = "no-referrer-when-downgrade";
+      box.innerHTML = "";
+      box.appendChild(iframe);
+    }
+    /* Fallback: si alguien igual toca el recuadro, lo carga al toque. */
+    boxes.forEach(function (box) { box.addEventListener("click", function () { loadMap(box); }); });
+    if (!("IntersectionObserver" in window)) { boxes.forEach(loadMap); return; }
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) { loadMap(entry.target); obs.unobserve(entry.target); }
       });
-    });
+    }, { rootMargin: "200px" });
+    boxes.forEach(function (box) { obs.observe(box); });
   }
 
   /* ---- Pausar animaciones GSAP cuando la pestaña queda en segundo plano
