@@ -891,11 +891,6 @@
       var msgInteresa = "Hola! Me interesa el " + v.marca + " " + v.modelo + " " + etiqueta + ". ¿Sigue disponible?";
       ctaInteresa.setAttribute("href", waBase + encodeURIComponent(msgInteresa));
     }
-    var ctaTest = $("[data-pdp-cta-test]");
-    if (ctaTest) {
-      var msgTest = "Hola! Quiero agendar un test drive para el " + v.marca + " " + v.modelo + " " + etiqueta + ".";
-      ctaTest.setAttribute("href", waBase + encodeURIComponent(msgTest));
-    }
     var shareWa = $("[data-pdp-share-wa]");
     if (shareWa) {
       var msgShare = "Mirá este " + v.marca + " " + v.modelo + ": " + location.href;
