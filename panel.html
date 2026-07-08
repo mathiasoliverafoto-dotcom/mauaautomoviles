@@ -302,10 +302,6 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
         Finanzas
       </button>
-      <button data-nav="usuarios" onclick="switchSection('usuarios')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 11l-3 3-1.5-1.5"/></svg>
-        Usuarios
-      </button>
     </nav>
     <div class="sidebar-foot">
       <span class="user-name" id="userName"></span>
@@ -452,16 +448,6 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 
       <div id="finResultados"></div>
     </div>
-
-    <!-- ═══ USUARIOS ═══ -->
-    <div class="section" id="secUsuarios">
-      <div class="main-header">
-        <h2>Usuarios y permisos</h2>
-        <button class="btn btn-primary" onclick="openUsuarioModal()">+ Nuevo usuario</button>
-      </div>
-      <div class="cli-list-head" style="grid-template-columns:1.2fr 1.4fr 1fr auto"><span>Nombre</span><span>Usuario · Rol</span><span>Sucursal</span><span></span></div>
-      <div id="usuariosGrid" class="cli-list"></div>
-    </div>
   </main>
 </div>
 
@@ -514,10 +500,10 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   </div>
 </div>
 
-<!-- MODAL VENDEDOR -->
+<!-- MODAL VENDEDOR / PERSONAL -->
 <div class="modal-overlay" id="vndModalOverlay">
-  <div class="modal" style="max-width:480px">
-    <div class="modal-head"><h3 id="vndModalTitle">Nuevo vendedor</h3><button class="modal-close" onclick="closeVndModal()">&times;</button></div>
+  <div class="modal" style="max-width:520px">
+    <div class="modal-head"><h3 id="vndModalTitle">Nueva persona</h3><button class="modal-close" onclick="closeVndModal()">&times;</button></div>
     <div class="modal-body">
       <form id="vndForm">
         <input type="hidden" id="vndId">
@@ -534,6 +520,31 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
             </div>
             <div class="form-group"><label>Valor</label><input type="number" id="vndComValor" min="0" step="0.5" placeholder="5"></div>
           </div>
+        </div>
+
+        <div class="form-toggle" style="padding-top:.5rem;margin-bottom:.8rem"><input type="checkbox" id="vndHayAcceso" onchange="toggleAcceso()"><label for="vndHayAcceso">Tiene acceso al panel (login)</label></div>
+        <div id="accesoFields" style="display:none">
+          <div class="form-row">
+            <div class="form-group"><label>Usuario (para ingresar)</label><input type="text" id="vndUsername" autocomplete="off" placeholder="jperez"></div>
+            <div class="form-group"><label>Contraseña</label><input type="text" id="vndPassword" autocomplete="new-password" placeholder="dejar vacío para no cambiar"></div>
+          </div>
+          <div class="form-row">
+            <div class="form-group"><label>Tipo de permisos</label>
+              <select id="vndRol" onchange="onVndRolChange()">
+                <option value="admin_general">Administrador general</option>
+                <option value="admin_sucursal">Administrador de sucursal</option>
+                <option value="vendedor">Vendedor</option>
+              </select>
+            </div>
+            <div class="form-group" id="vndSucursalGroup"><label>Sucursal asignada</label>
+              <select id="vndSucursal">
+                <option value="Florencio Sánchez 650, Melo">Florencio Sánchez 650, Melo</option>
+                <option value="Bvar. Francisco Mata 524, Melo">Bvar. Francisco Mata 524, Melo</option>
+                <option value="Blvr. Aparicio Saravia, Río Branco">Blvr. Aparicio Saravia, Río Branco</option>
+              </select>
+            </div>
+          </div>
+          <p style="font-size:.78rem;color:var(--ink-mute)">El administrador general ve todo. El de sucursal no ve Personal y sus finanzas quedan acotadas a su sucursal. El vendedor solo carga y vende vehículos.</p>
         </div>
       </form>
     </div>
@@ -632,43 +643,6 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   </div>
 </div>
 
-<!-- MODAL USUARIO -->
-<div class="modal-overlay" id="usuModalOverlay">
-  <div class="modal" style="max-width:480px">
-    <div class="modal-head"><h3>Nuevo usuario</h3><button class="modal-close" onclick="closeUsuarioModal()">&times;</button></div>
-    <div class="modal-body">
-      <form id="usuForm">
-        <div class="form-row full"><div class="form-group"><label>Nombre y Apellido</label><input type="text" id="usuNombre" required placeholder="Juan Pérez"></div></div>
-        <div class="form-row">
-          <div class="form-group"><label>Usuario (para ingresar)</label><input type="text" id="usuUsername" required autocomplete="off" placeholder="jperez"></div>
-          <div class="form-group"><label>Contraseña</label><input type="text" id="usuPassword" required autocomplete="new-password" placeholder="clave inicial"></div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label>Tipo de permisos</label>
-            <select id="usuRol" onchange="onUsuRolChange()">
-              <option value="admin_general">Administrador general</option>
-              <option value="admin_sucursal">Administrador de sucursal</option>
-              <option value="vendedor">Vendedor</option>
-            </select>
-          </div>
-          <div class="form-group" id="usuSucursalGroup"><label>Sucursal asignada</label>
-            <select id="usuSucursal">
-              <option value="Florencio Sánchez 650, Melo">Florencio Sánchez 650, Melo</option>
-              <option value="Bvar. Francisco Mata 524, Melo">Bvar. Francisco Mata 524, Melo</option>
-              <option value="Blvr. Aparicio Saravia, Río Branco">Blvr. Aparicio Saravia, Río Branco</option>
-            </select>
-          </div>
-        </div>
-        <p style="font-size:.78rem;color:var(--ink-mute)">El administrador general ve todo. El de sucursal ve el panel pero las finanzas solo de su sucursal y no ve Personal. El vendedor solo carga y vende vehículos.</p>
-      </form>
-    </div>
-    <div class="modal-foot">
-      <button class="btn btn-outline" onclick="closeUsuarioModal()">Cancelar</button>
-      <button class="btn btn-success" onclick="saveUsuario()">Crear usuario</button>
-    </div>
-  </div>
-</div>
-
 <!-- MODAL DETALLE VEHÍCULO -->
 <div class="modal-overlay" id="vehDetOverlay">
   <div class="modal" style="max-width:660px">
@@ -691,12 +665,12 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 <script>
 (function () {
   "use strict";
-  var vehiculos = [], vendedores = [], ventas = [], clientes = [], financiaciones = [], usuarios = [];
+  var vehiculos = [], vendedores = [], ventas = [], clientes = [], financiaciones = [];
   var editFotos = [], viewMode = "grid", finTab = "mes";
   var cliModalContext = null;
   var currentUser = { rol: "admin_general", sucursal: "" };
   var PERMS = {
-    admin_general:  { calculadora:1, vehiculos:1, clientes:1, personal:1, cobranzas:1, finanzas:1, usuarios:1, borrarVeh:1 },
+    admin_general:  { calculadora:1, vehiculos:1, clientes:1, personal:1, cobranzas:1, finanzas:1, borrarVeh:1 },
     admin_sucursal: { calculadora:1, vehiculos:1, clientes:1, cobranzas:1, finanzas:1, borrarVeh:1 },
     vendedor:       { calculadora:1, vehiculos:1, clientes:1 }
   };
@@ -802,7 +776,6 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     if(name==="personal") renderPersonal();
     if(name==="clientes") renderClientes();
     if(name==="cobranzas") renderCobranzas();
-    if(name==="usuarios") renderUsuarios();
     if(name==="calculadora") runCalc();
   };
 
@@ -1091,14 +1064,12 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   window.confirmDelete=function(id){deleteTarget={type:"veh",id:id};document.getElementById("confirmMsg").textContent="¿Eliminar este vehículo?";document.getElementById("confirmOverlay").classList.add("is-open");};
   window.confirmDeleteVnd=function(id){deleteTarget={type:"vnd",id:id};document.getElementById("confirmMsg").textContent="¿Eliminar este vendedor?";document.getElementById("confirmOverlay").classList.add("is-open");};
   window.confirmDeleteCli=function(id){deleteTarget={type:"cli",id:id};document.getElementById("confirmMsg").textContent="¿Eliminar este cliente?";document.getElementById("confirmOverlay").classList.add("is-open");};
-  window.confirmDeleteUsu=function(u){deleteTarget={type:"usu",id:u};document.getElementById("confirmMsg").textContent="¿Eliminar el usuario \""+u+"\"?";document.getElementById("confirmOverlay").classList.add("is-open");};
   window.closeConfirm=function(){document.getElementById("confirmOverlay").classList.remove("is-open");deleteTarget=null;};
   document.getElementById("confirmYes").addEventListener("click",function(){
     if(!deleteTarget)return;
-    var urls={veh:"/api/vehiculos/",vnd:"/api/vendedores/",cli:"/api/clientes/",usu:"/api/usuarios/"};
+    var urls={veh:"/api/vehiculos/",vnd:"/api/vendedores/",cli:"/api/clientes/"};
     var url=urls[deleteTarget.type]+encodeURIComponent(deleteTarget.id);
-    var wasUsu=deleteTarget.type==="usu";
-    api(url,{method:"DELETE"}).then(function(){closeConfirm();if(wasUsu){renderUsuarios();}else{loadAll();}toast("Eliminado");}).catch(function(e){toast(e.message,"err");closeConfirm();});
+    api(url,{method:"DELETE"}).then(function(){closeConfirm();loadAll();toast("Eliminado");}).catch(function(e){toast(e.message,"err");closeConfirm();});
   });
 
   // ── Fotos ───────────────────────────
@@ -1116,11 +1087,13 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   function renderPersonal(){
     document.getElementById("personalGrid").innerHTML=vendedores.map(function(v){
       var comTxt=(!v.comision||v.comision.valor===0)?"Sin comisión":(v.comision.tipo==="porcentaje"?(v.comision.valor+"%"):("US$ "+fmtN(v.comision.valor)+" fijo"));
+      var accesoTxt=v.username?('🔑 '+esc(v.username)+' · '+esc(ROL_LABEL[v.rol]||v.rol)+(v.sucursal?(' · '+esc(v.sucursal.split(",")[0])):'')):'Sin acceso al panel';
       return '<div class="personal-card">'+
         '<div class="pc-name">'+esc(v.nombre)+'</div>'+
         (v.telefono?'<div class="pc-detail">📞 '+esc(v.telefono)+'</div>':'')+
         (v.email?'<div class="pc-detail">✉ '+esc(v.email)+'</div>':'')+
         '<div class="pc-comision">'+comTxt+'</div>'+
+        '<div class="pc-detail" style="margin-top:.3rem">'+accesoTxt+'</div>'+
         '<div class="pc-actions">'+
           '<button class="btn btn-outline btn-sm" onclick="editVendedor(\''+v.id+'\')">Editar</button>'+
           '<button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="confirmDeleteVnd(\''+v.id+'\')">Eliminar</button>'+
@@ -1129,9 +1102,14 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   }
 
   window.toggleComision=function(){document.getElementById("comFields").style.display=document.getElementById("vndHayCom").checked?"block":"none";};
+  window.toggleAcceso=function(){document.getElementById("accesoFields").style.display=document.getElementById("vndHayAcceso").checked?"block":"none";};
+  window.onVndRolChange=function(){
+    var esGeneral=document.getElementById("vndRol").value==="admin_general";
+    document.getElementById("vndSucursalGroup").style.display=esGeneral?"none":"";
+  };
   window.openVndModal=function(v){
     var isEdit=!!v;
-    document.getElementById("vndModalTitle").textContent=isEdit?"Editar vendedor":"Nuevo vendedor";
+    document.getElementById("vndModalTitle").textContent=isEdit?"Editar persona":"Nueva persona";
     document.getElementById("vndId").value=isEdit?v.id:"";
     document.getElementById("vndNombre").value=isEdit?v.nombre:"";
     document.getElementById("vndTel").value=isEdit?v.telefono:"";
@@ -1141,6 +1119,17 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     document.getElementById("comFields").style.display=hayCom?"block":"none";
     document.getElementById("vndComTipo").value=hayCom?v.comision.tipo:"porcentaje";
     document.getElementById("vndComValor").value=hayCom?v.comision.valor:5;
+
+    var hayAcceso=isEdit&&!!v.username;
+    document.getElementById("vndHayAcceso").checked=hayAcceso;
+    document.getElementById("accesoFields").style.display=hayAcceso?"block":"none";
+    document.getElementById("vndUsername").value=hayAcceso?v.username:"";
+    document.getElementById("vndPassword").value="";
+    document.getElementById("vndPassword").placeholder=hayAcceso?"dejar vacío para no cambiar":"clave inicial";
+    document.getElementById("vndRol").value=hayAcceso?v.rol:"vendedor";
+    document.getElementById("vndSucursal").value=hayAcceso&&v.sucursal?v.sucursal:document.getElementById("vndSucursal").options[0].value;
+    onVndRolChange();
+
     document.getElementById("vndModalOverlay").classList.add("is-open");
   };
   window.closeVndModal=function(){document.getElementById("vndModalOverlay").classList.remove("is-open");};
@@ -1152,9 +1141,22 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     var id=document.getElementById("vndId").value;
     var hayCom=document.getElementById("vndHayCom").checked;
     var comision=hayCom?{tipo:document.getElementById("vndComTipo").value,valor:parseFloat(document.getElementById("vndComValor").value||0)}:{tipo:"porcentaje",valor:0};
-    var body={nombre:document.getElementById("vndNombre").value,telefono:document.getElementById("vndTel").value,email:document.getElementById("vndEmail").value,comision:comision};
+    var hayAcceso=document.getElementById("vndHayAcceso").checked;
+    if(hayAcceso && !document.getElementById("vndUsername").value.trim()){toast("Elegí un nombre de usuario para el acceso al panel","err");return;}
+    if(hayAcceso && !id && !document.getElementById("vndPassword").value){toast("Ingresá una contraseña","err");return;}
+    var body={
+      nombre:document.getElementById("vndNombre").value,
+      telefono:document.getElementById("vndTel").value,
+      email:document.getElementById("vndEmail").value,
+      comision:comision,
+      tieneAcceso:hayAcceso,
+      username:document.getElementById("vndUsername").value,
+      password:document.getElementById("vndPassword").value,
+      rol:document.getElementById("vndRol").value,
+      sucursal:document.getElementById("vndSucursal").value
+    };
     var url=id?"/api/vendedores/"+id:"/api/vendedores";
-    api(url,{method:id?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(function(){closeVndModal();loadAll();toast(id?"Vendedor actualizado":"Vendedor creado");}).catch(function(e){toast(e.message,"err");});
+    api(url,{method:id?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(function(){closeVndModal();loadAll();toast(id?"Actualizado":"Creado");}).catch(function(e){toast(e.message,"err");});
   };
 
   // ── Clientes ─────────────────────────
@@ -1233,53 +1235,6 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
         toast(id?"Cliente actualizado":"Cliente creado");
       });
     }).catch(function(e){toast(e.message,"err");});
-  };
-
-  // ── Usuarios (login + roles) ─────────
-  function renderUsuarios(){
-    var grid=document.getElementById("usuariosGrid");
-    api("/api/usuarios").then(function(list){
-      usuarios=list;
-      if(!list.length){grid.innerHTML='<div class="no-sales">No hay usuarios</div>';return;}
-      grid.innerHTML=list.map(function(u){
-        var esYo=false;
-        var suc=u.sucursal?u.sucursal.split(",")[0]:"—";
-        return '<div class="cli-list-row" style="grid-template-columns:1.2fr 1.4fr 1fr auto">'+
-          '<span class="cl-name">'+esc(u.nombre)+'</span>'+
-          '<span class="cl-detail">'+esc(u.username)+' · '+esc(ROL_LABEL[u.rol]||u.rol)+'</span>'+
-          '<span class="cl-detail">'+esc(u.rol==="admin_general"?"Todas":suc)+'</span>'+
-          '<div class="cl-actions"><button class="btn btn-outline btn-sm" style="color:var(--red)" onclick=\'confirmDeleteUsu('+JSON.stringify(u.username).replace(/'/g,"&#39;")+')\'>Eliminar</button></div>'+
-        '</div>';
-      }).join("");
-    }).catch(function(e){grid.innerHTML='<div class="no-sales">'+esc(e.message)+'</div>';});
-  }
-
-  window.onUsuRolChange=function(){
-    var esGeneral=document.getElementById("usuRol").value==="admin_general";
-    document.getElementById("usuSucursalGroup").style.display=esGeneral?"none":"";
-  };
-  window.openUsuarioModal=function(){
-    document.getElementById("usuNombre").value="";
-    document.getElementById("usuUsername").value="";
-    document.getElementById("usuPassword").value="";
-    document.getElementById("usuRol").value="vendedor";
-    document.getElementById("usuSucursal").selectedIndex=0;
-    onUsuRolChange();
-    document.getElementById("usuModalOverlay").classList.add("is-open");
-  };
-  window.closeUsuarioModal=function(){document.getElementById("usuModalOverlay").classList.remove("is-open");};
-  window.saveUsuario=function(){
-    var form=document.getElementById("usuForm");
-    if(!form.checkValidity()){form.reportValidity();return;}
-    var rol=document.getElementById("usuRol").value;
-    var body={
-      nombre:document.getElementById("usuNombre").value,
-      username:document.getElementById("usuUsername").value,
-      password:document.getElementById("usuPassword").value,
-      rol:rol,
-      sucursal:rol==="admin_general"?"":document.getElementById("usuSucursal").value
-    };
-    api("/api/usuarios",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(function(){closeUsuarioModal();renderUsuarios();toast("Usuario creado");}).catch(function(e){toast(e.message,"err");});
   };
 
   // ── Venta ───────────────────────────

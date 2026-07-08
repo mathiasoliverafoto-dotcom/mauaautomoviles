@@ -93,18 +93,20 @@ def panel():
 @app.route("/api/login", methods=["POST"])
 def api_login():
     body = request.get_json(silent=True) or {}
-    username = body.get("username", "").strip()
+    username = body.get("username", "").strip().lower()
     password = body.get("password", "")
     pw_hash = hashlib.sha256(password.encode()).hexdigest()
 
-    users = read_json("usuarios.json")
-    for u in users:
-        if u["username"] == username and u["password"] == pw_hash:
+    # El login vive en vendedores.json: una persona de Personal puede
+    # tener (opcionalmente) acceso al panel con usuario/contraseña/rol.
+    vendedores = read_json("vendedores.json")
+    for v in vendedores:
+        if v.get("username") and v["username"] == username and v.get("password") == pw_hash:
             session["user"] = username
-            session["nombre"] = u.get("nombre", username)
-            session["rol"] = u.get("rol", "admin_general")
-            session["sucursal"] = u.get("sucursal", "")
-            return jsonify({"ok": True, "nombre": u.get("nombre", username),
+            session["nombre"] = v.get("nombre", username)
+            session["rol"] = v.get("rol", "vendedor")
+            session["sucursal"] = v.get("sucursal", "")
+            return jsonify({"ok": True, "nombre": v.get("nombre", username),
                             "rol": session["rol"], "sucursal": session["sucursal"]})
 
     return jsonify({"error": "Usuario o contraseña incorrectos"}), 401
@@ -280,13 +282,71 @@ def api_upload():
 
 
 # ──────────────────────────────────────────────────────────────
-# CRUD Vendedores
+# CRUD Vendedores / Personal
+# Cada persona vive en un solo lugar: datos + comisión, y opcional-
+# mente acceso al panel (usuario, contraseña, rol, sucursal). Antes
+# esto estaba separado en "vendedores" y "usuarios" y una misma
+# persona (ej. el administrador) terminaba duplicada en dos listas.
 # ──────────────────────────────────────────────────────────────
+
+ROLES_VALIDOS = {"admin_general", "admin_sucursal", "vendedor"}
+
+def _vendedor_publico(v, full=False):
+    out = {
+        "id": v.get("id", ""),
+        "nombre": v.get("nombre", ""),
+        "telefono": v.get("telefono", ""),
+        "email": v.get("email", ""),
+        "comision": v.get("comision", {"tipo": "porcentaje", "valor": 0}),
+        "activo": v.get("activo", True),
+    }
+    if full:
+        out["username"] = v.get("username", "")
+        out["rol"] = v.get("rol", "")
+        out["sucursal"] = v.get("sucursal", "")
+    return out
+
+def _aplicar_acceso(vend, body, vendedores):
+    """Aplica (o quita) el acceso al panel sobre un registro de vendedor.
+    Devuelve un mensaje de error, o None si todo salió bien."""
+    if not body.get("tieneAcceso"):
+        vend["username"] = ""
+        vend["password"] = ""
+        vend["rol"] = ""
+        vend["sucursal"] = ""
+        return None
+
+    username = (body.get("username") or "").strip().lower()
+    rol = body.get("rol", "vendedor")
+    sucursal = (body.get("sucursal") or "").strip()
+
+    if not username:
+        return "Elegí un nombre de usuario para el acceso al panel"
+    if rol not in ROLES_VALIDOS:
+        return "Rol inválido"
+    if rol in ("admin_sucursal", "vendedor") and not sucursal:
+        return "Elegí una sucursal para este rol"
+    if any(v.get("username") == username and v.get("id") != vend.get("id") for v in vendedores):
+        return "Ese nombre de usuario ya existe"
+
+    password = body.get("password", "")
+    if password:
+        vend["password"] = hashlib.sha256(password.encode()).hexdigest()
+    elif not vend.get("password"):
+        return "Ingresá una contraseña"
+
+    vend["username"] = username
+    vend["rol"] = rol
+    vend["sucursal"] = "" if rol == "admin_general" else sucursal
+    return None
 
 @app.route("/api/vendedores", methods=["GET"])
 @login_required
 def api_vendedores_list():
-    return jsonify(read_json("vendedores.json"))
+    # Solo el administrador general ve usuario/rol/sucursal de cada
+    # persona (la contraseña nunca se expone por API).
+    full = session.get("rol") == "admin_general"
+    return jsonify([_vendedor_publico(v, full) for v in read_json("vendedores.json")])
 
 @app.route("/api/vendedores", methods=["POST"])
 @require_roles("admin_general")
@@ -300,10 +360,14 @@ def api_vendedores_create():
         "email": body.get("email", "").strip(),
         "comision": body.get("comision", {"tipo": "porcentaje", "valor": 0}),
         "activo": True,
+        "username": "", "password": "", "rol": "", "sucursal": "",
     }
+    err = _aplicar_acceso(nuevo, body, vendedores)
+    if err:
+        return jsonify({"error": err}), 400
     vendedores.append(nuevo)
     write_json("vendedores.json", vendedores)
-    return jsonify(nuevo), 201
+    return jsonify(_vendedor_publico(nuevo, True)), 201
 
 @app.route("/api/vendedores/<vid>", methods=["PUT"])
 @require_roles("admin_general")
@@ -319,18 +383,38 @@ def api_vendedores_update(vid):
                 vendedores[i]["comision"] = body["comision"]
             if "activo" in body:
                 vendedores[i]["activo"] = bool(body["activo"])
+
+            if "tieneAcceso" in body:
+                era_admin_general = v.get("rol") == "admin_general" and v.get("username")
+                deja_de_ser_admin_general = era_admin_general and (
+                    not body.get("tieneAcceso") or body.get("rol") != "admin_general"
+                )
+                if deja_de_ser_admin_general:
+                    otros = [x for x in vendedores if x["id"] != vid and x.get("rol") == "admin_general" and x.get("username")]
+                    if not otros:
+                        return jsonify({"error": "Tiene que quedar al menos un administrador general con acceso"}), 400
+                err = _aplicar_acceso(vendedores[i], body, vendedores)
+                if err:
+                    return jsonify({"error": err}), 400
+
             write_json("vendedores.json", vendedores)
-            return jsonify(vendedores[i])
+            return jsonify(_vendedor_publico(vendedores[i], True))
     return jsonify({"error": "Vendedor no encontrado"}), 404
 
 @app.route("/api/vendedores/<vid>", methods=["DELETE"])
 @require_roles("admin_general")
 def api_vendedores_delete(vid):
     vendedores = read_json("vendedores.json")
-    original = len(vendedores)
-    vendedores = [v for v in vendedores if v["id"] != vid]
-    if len(vendedores) == original:
+    target = next((v for v in vendedores if v["id"] == vid), None)
+    if not target:
         return jsonify({"error": "Vendedor no encontrado"}), 404
+    if target.get("username") and target.get("username") == session.get("user"):
+        return jsonify({"error": "No podés eliminar tu propio usuario"}), 400
+    if target.get("rol") == "admin_general" and target.get("username"):
+        otros = [v for v in vendedores if v["id"] != vid and v.get("rol") == "admin_general" and v.get("username")]
+        if not otros:
+            return jsonify({"error": "Tiene que quedar al menos un administrador general"}), 400
+    vendedores = [v for v in vendedores if v["id"] != vid]
     write_json("vendedores.json", vendedores)
     return jsonify({"ok": True})
 
@@ -551,73 +635,6 @@ def api_financiaciones_pagar(fid):
 
 
 # ──────────────────────────────────────────────────────────────
-# Usuarios (login + roles) — solo administrador general
-# ──────────────────────────────────────────────────────────────
-
-ROLES_VALIDOS = {"admin_general", "admin_sucursal", "vendedor"}
-
-def _usuario_publico(u):
-    return {
-        "username": u.get("username", ""),
-        "nombre": u.get("nombre", ""),
-        "rol": u.get("rol", "admin_general"),
-        "sucursal": u.get("sucursal", ""),
-    }
-
-@app.route("/api/usuarios", methods=["GET"])
-@require_roles("admin_general")
-def api_usuarios_list():
-    return jsonify([_usuario_publico(u) for u in read_json("usuarios.json")])
-
-@app.route("/api/usuarios", methods=["POST"])
-@require_roles("admin_general")
-def api_usuarios_create():
-    body = request.get_json(silent=True) or {}
-    username = body.get("username", "").strip().lower()
-    password = body.get("password", "")
-    nombre = body.get("nombre", "").strip()
-    rol = body.get("rol", "vendedor")
-    sucursal = body.get("sucursal", "").strip()
-
-    if not username or not password:
-        return jsonify({"error": "Usuario y contraseña son obligatorios"}), 400
-    if rol not in ROLES_VALIDOS:
-        return jsonify({"error": "Rol inválido"}), 400
-    if rol in ("admin_sucursal", "vendedor") and not sucursal:
-        return jsonify({"error": "Elegí una sucursal para este rol"}), 400
-
-    usuarios = read_json("usuarios.json")
-    if any(u["username"] == username for u in usuarios):
-        return jsonify({"error": "Ese nombre de usuario ya existe"}), 400
-
-    nuevo = {
-        "username": username,
-        "password": hashlib.sha256(password.encode()).hexdigest(),
-        "nombre": nombre or username,
-        "rol": rol,
-        "sucursal": "" if rol == "admin_general" else sucursal,
-    }
-    usuarios.append(nuevo)
-    write_json("usuarios.json", usuarios)
-    return jsonify(_usuario_publico(nuevo)), 201
-
-@app.route("/api/usuarios/<username>", methods=["DELETE"])
-@require_roles("admin_general")
-def api_usuarios_delete(username):
-    username = username.strip().lower()
-    if username == session.get("user"):
-        return jsonify({"error": "No podés eliminar tu propio usuario"}), 400
-    usuarios = read_json("usuarios.json")
-    quedan = [u for u in usuarios if u["username"] != username]
-    if len(quedan) == len(usuarios):
-        return jsonify({"error": "Usuario no encontrado"}), 404
-    if not any(u.get("rol", "admin_general") == "admin_general" for u in quedan):
-        return jsonify({"error": "Tiene que quedar al menos un administrador general"}), 400
-    write_json("usuarios.json", quedan)
-    return jsonify({"ok": True})
-
-
-# ──────────────────────────────────────────────────────────────
 # Datos públicos (para el frontend)
 # ──────────────────────────────────────────────────────────────
 
@@ -652,20 +669,52 @@ if __name__ == "__main__":
     os.makedirs(DATA, exist_ok=True)
     os.makedirs(UPLOAD, exist_ok=True)
 
-    if not os.path.exists(data_path("usuarios.json")):
-        pw = hashlib.sha256("maua2026".encode()).hexdigest()
-        write_json("usuarios.json", [{"username": "admin", "password": pw, "nombre": "Administrador",
-                                      "rol": "admin_general", "sucursal": ""}])
-        print("  → Usuario creado: admin / maua2026")
-    else:
-        # Migración: usuarios viejos sin rol pasan a administrador general.
-        _users = read_json("usuarios.json")
+    if not os.path.exists(data_path("vendedores.json")):
+        write_json("vendedores.json", [])
+
+    # Migración: si existe un usuarios.json (login) viejo, se fusiona
+    # dentro de vendedores.json (Personal) para no tener a la misma
+    # persona duplicada en dos listas separadas. Se hace una sola vez:
+    # si ya hay algún vendedor con "username" cargado, no se repite.
+    _vendedores = read_json("vendedores.json")
+    if os.path.exists(data_path("usuarios.json")) and not any(v.get("username") for v in _vendedores):
+        _usuarios_viejos = read_json("usuarios.json")
         _changed = False
-        for _u in _users:
-            if "rol" not in _u:
-                _u["rol"] = "admin_general"; _u.setdefault("sucursal", ""); _changed = True
+        for _u in _usuarios_viejos:
+            _nombre_u = (_u.get("nombre") or "").strip().lower()
+            _match = next((v for v in _vendedores if v.get("nombre", "").strip().lower() == _nombre_u), None)
+            if _match:
+                _match["username"] = _u["username"]
+                _match["password"] = _u["password"]
+                _match["rol"] = _u.get("rol", "vendedor")
+                _match["sucursal"] = _u.get("sucursal", "")
+            else:
+                _vendedores.append({
+                    "id": "vnd-" + uuid.uuid4().hex[:8],
+                    "nombre": _u.get("nombre", _u["username"]),
+                    "telefono": "", "email": "",
+                    "comision": {"tipo": "porcentaje", "valor": 0}, "activo": True,
+                    "username": _u["username"], "password": _u["password"],
+                    "rol": _u.get("rol", "vendedor"), "sucursal": _u.get("sucursal", ""),
+                })
+            _changed = True
         if _changed:
-            write_json("usuarios.json", _users)
+            write_json("vendedores.json", _vendedores)
+            print("  → Usuarios de login fusionados dentro de Personal")
+
+    # Si nadie con rol administrador general tiene acceso, se crea uno
+    # por defecto (instalación nueva o vendedores.json vacío).
+    _vendedores = read_json("vendedores.json")
+    if not any(v.get("rol") == "admin_general" and v.get("username") for v in _vendedores):
+        pw = hashlib.sha256("maua2026".encode()).hexdigest()
+        _vendedores.append({
+            "id": "vnd-" + uuid.uuid4().hex[:8],
+            "nombre": "Administrador", "telefono": "", "email": "",
+            "comision": {"tipo": "porcentaje", "valor": 0}, "activo": True,
+            "username": "admin", "password": pw, "rol": "admin_general", "sucursal": "",
+        })
+        write_json("vendedores.json", _vendedores)
+        print("  → Usuario creado: admin / maua2026")
 
     if not os.path.exists(data_path("vehiculos.json")):
         write_json("vehiculos.json", [])

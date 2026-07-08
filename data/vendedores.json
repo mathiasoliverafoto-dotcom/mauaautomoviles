@@ -8,7 +8,11 @@
       "tipo": "porcentaje",
       "valor": 0
     },
-    "activo": true
+    "activo": true,
+    "username": "admin",
+    "password": "60c605abaa86f0420830304b555f78b54b54126d12b4ac7611bc3b6abd3a12f6",
+    "rol": "admin_general",
+    "sucursal": ""
   },
   {
     "id": "vnd-d7c6cc9e",
@@ -19,7 +23,11 @@
       "tipo": "porcentaje",
       "valor": 5
     },
-    "activo": true
+    "activo": true,
+    "password": "",
+    "username": "",
+    "rol": "",
+    "sucursal": ""
   },
   {
     "id": "vnd-6559e76f",
