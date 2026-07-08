@@ -82,6 +82,13 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 .stat-card .stat-label { font-size: .72rem; color: var(--ink-mute); text-transform: uppercase; letter-spacing: .08em; margin-top: .15rem; }
 
 /* ── Grid de vehículos ─────────────────── */
+.veh-filters { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-bottom: 1.3rem; }
+.veh-filters input, .veh-filters select { padding: .45rem .6rem; background: var(--bg-3); border: 1px solid var(--line); border-radius: 8px; color: var(--ink); font-size: .82rem; font-family: inherit; }
+.veh-filters select { appearance: none; padding-right: 1.6rem; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%239ca3af' fill='none' stroke-width='1.5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right .55rem center; }
+.veh-filters #vfBuscar { min-width: 190px; flex: 1 1 190px; }
+.veh-filters .vf-range { display: inline-flex; align-items: center; gap: .3rem; font-size: .72rem; color: var(--ink-mute); text-transform: uppercase; letter-spacing: .05em; }
+.veh-filters .vf-range input { width: 74px; }
+.veh-filters .vf-count { font-size: .78rem; color: var(--ink-mute); margin-left: auto; }
 .veh-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
 .veh-panel-card { background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; transition: border-color .2s; }
 .veh-panel-card:hover { border-color: rgba(255,255,255,.18); }
@@ -295,6 +302,28 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
           <button class="btn btn-primary" onclick="openVehModal()">+ Nuevo vehículo</button>
         </div>
       </div>
+      <div class="veh-filters" id="vehFilters">
+        <input type="search" id="vfBuscar" placeholder="Buscar marca, modelo…" oninput="applyVehFilters()">
+        <select id="vfEstado" onchange="applyVehFilters()">
+          <option value="">Todos los estados</option>
+          <option value="0km">0 km</option>
+          <option value="Igual a 0km">Igual a 0km</option>
+          <option value="Buen estado">Buen estado</option>
+          <option value="Usado">Usado</option>
+        </select>
+        <select id="vfSucursal" onchange="applyVehFilters()"><option value="">Todas las sucursales</option></select>
+        <select id="vfCarroceria" onchange="applyVehFilters()"><option value="">Toda carrocería</option></select>
+        <select id="vfCombustible" onchange="applyVehFilters()"><option value="">Todo combustible</option></select>
+        <select id="vfPublicacion" onchange="applyVehFilters()">
+          <option value="">Publicados y ocultos</option>
+          <option value="pub">Solo publicados</option>
+          <option value="oculto">Solo ocultos</option>
+        </select>
+        <span class="vf-range">Precio <input type="number" id="vfPrecioMin" placeholder="mín" min="0" oninput="applyVehFilters()"><input type="number" id="vfPrecioMax" placeholder="máx" min="0" oninput="applyVehFilters()"></span>
+        <span class="vf-range">Km <input type="number" id="vfKmMin" placeholder="mín" min="0" oninput="applyVehFilters()"><input type="number" id="vfKmMax" placeholder="máx" min="0" oninput="applyVehFilters()"></span>
+        <button class="btn btn-outline btn-sm" onclick="limpiarVehFiltros()">Limpiar</button>
+        <span class="vf-count" id="vfCount"></span>
+      </div>
       <div id="vehContainer"></div>
       <div id="emptyState" class="empty-state" style="display:none">
         <p>No hay vehículos cargados</p>
@@ -463,10 +492,14 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
         </div>
 
         <div class="form-row">
+          <div class="form-group"><label>Precio publicado (US$)</label><input type="number" id="vtaPrecioPublicado" disabled></div>
           <div class="form-group"><label>Precio de venta (US$)</label><input type="number" id="vtaPrecio" min="0" required oninput="recalcVenta()"></div>
-          <div class="form-group"><label>Vendedor</label><select id="vtaVendedor" required></select></div>
         </div>
-        <div class="form-row full"><div class="form-group"><label>Fecha</label><input type="date" id="vtaFecha"></div></div>
+        <p id="vtaDescuentoInfo" style="font-size:.82rem;margin:-.4rem 0 .8rem"></p>
+        <div class="form-row">
+          <div class="form-group"><label>Vendedor</label><select id="vtaVendedor" required></select></div>
+          <div class="form-group"><label>Fecha</label><input type="date" id="vtaFecha"></div>
+        </div>
 
         <div class="form-toggle" style="padding-top:.5rem;margin-bottom:.8rem"><input type="checkbox" id="vtaHayToma" onchange="toggleToma()"><label for="vtaHayToma">Se tomó auto como parte de pago</label></div>
         <div id="tomaFields" style="display:none">
@@ -478,7 +511,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 
         <div class="form-row">
           <div class="form-group"><label>Monto recibido ahora (US$)</label><input type="number" id="vtaMontoInicial" min="0" oninput="recalcVenta()"></div>
-          <div class="form-group"><label>Forma de pago</label><select id="vtaMetodoPago"><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia bancaria</option></select></div>
+          <div class="form-group"><label>Forma de pago</label><select id="vtaMetodoPago"><option value="efectivo">Efectivo</option><option value="transferencia">Transferencia bancaria</option><option value="financiacion_bancaria">Financiación bancaria</option></select></div>
         </div>
 
         <p id="vtaSaldoInfo" style="font-size:.85rem;color:var(--ink-soft);margin:-.4rem 0 .8rem"></p>
@@ -595,17 +628,15 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     viewMode=mode;
     document.getElementById("btnViewGrid").classList.toggle("is-active",mode==="grid");
     document.getElementById("btnViewList").classList.toggle("is-active",mode==="list");
-    renderVehiculos();
+    renderVehList();
   };
 
   // ── Render vehículos ────────────────
   function renderVehiculos(){
-    var container=document.getElementById("vehContainer");
-    var empty=document.getElementById("emptyState");
     var activeVehs=vehiculos.filter(function(v){return v.condicion!=="vendido";});
     var vendidos=vehiculos.filter(function(v){return v.condicion==="vendido";});
 
-    // Stats
+    // Stats (sobre todo el stock, sin filtrar)
     var pub=activeVehs.filter(function(v){return v.publicado!==false;}).length;
     var usados=activeVehs.filter(function(v){return v.condicion==="usado";}).length;
     var cero=activeVehs.filter(function(v){return v.condicion==="0km";}).length;
@@ -615,10 +646,71 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     document.getElementById("btnViewGrid").classList.toggle("is-active",viewMode==="grid");
     document.getElementById("btnViewList").classList.toggle("is-active",viewMode==="list");
 
-    if(!activeVehs.length && !vendidos.length){ container.innerHTML=""; empty.style.display="block"; return; }
-    empty.style.display="none";
-    container.innerHTML = (viewMode==="grid" ? renderGrid(activeVehs) : renderList(activeVehs));
+    populateVehFilterOptions(activeVehs);
+    renderVehList();
   }
+
+  function populateVehFilterOptions(list){
+    function fill(id, values){
+      var sel=document.getElementById(id); if(!sel) return;
+      var cur=sel.value;
+      var first=sel.options.length?sel.options[0].outerHTML:"";
+      sel.innerHTML=first+values.map(function(x){return '<option value="'+esc(x)+'">'+esc(x)+'</option>';}).join("");
+      sel.value=cur;
+    }
+    function uniq(key){var s={};list.forEach(function(v){if(v[key])s[v[key]]=1;});return Object.keys(s).sort();}
+    fill("vfSucursal", uniq("ubicacion"));
+    fill("vfCarroceria", uniq("carroceria"));
+    fill("vfCombustible", uniq("tipoMotor"));
+  }
+
+  function filterVehiculos(list){
+    var q=(document.getElementById("vfBuscar").value||"").trim().toLowerCase();
+    var estado=document.getElementById("vfEstado").value;
+    var suc=document.getElementById("vfSucursal").value;
+    var carr=document.getElementById("vfCarroceria").value;
+    var comb=document.getElementById("vfCombustible").value;
+    var pubf=document.getElementById("vfPublicacion").value;
+    var pMin=parseFloat(document.getElementById("vfPrecioMin").value);
+    var pMax=parseFloat(document.getElementById("vfPrecioMax").value);
+    var kMin=parseFloat(document.getElementById("vfKmMin").value);
+    var kMax=parseFloat(document.getElementById("vfKmMax").value);
+    return list.filter(function(v){
+      if(q && (v.marca+" "+v.modelo+" "+(v.version||"")).toLowerCase().indexOf(q)===-1) return false;
+      if(estado){
+        if(estado==="0km"){ if(v.condicion!=="0km") return false; }
+        else if(v.condicion!=="usado" || (v.etiqueta||"Usado")!==estado) return false;
+      }
+      if(suc && v.ubicacion!==suc) return false;
+      if(carr && v.carroceria!==carr) return false;
+      if(comb && v.tipoMotor!==comb) return false;
+      if(pubf==="pub" && v.publicado===false) return false;
+      if(pubf==="oculto" && v.publicado!==false) return false;
+      if(!isNaN(pMin) && (v.precio||0)<pMin) return false;
+      if(!isNaN(pMax) && (v.precio||0)>pMax) return false;
+      if(!isNaN(kMin) && (v.km||0)<kMin) return false;
+      if(!isNaN(kMax) && (v.km||0)>kMax) return false;
+      return true;
+    });
+  }
+
+  function renderVehList(){
+    var container=document.getElementById("vehContainer");
+    var empty=document.getElementById("emptyState");
+    var activeVehs=vehiculos.filter(function(v){return v.condicion!=="vendido";});
+    if(!vehiculos.length){ container.innerHTML=""; empty.style.display="block"; document.getElementById("vfCount").textContent=""; return; }
+    empty.style.display="none";
+    var filtered=filterVehiculos(activeVehs);
+    document.getElementById("vfCount").textContent=filtered.length+" de "+activeVehs.length;
+    if(!filtered.length){ container.innerHTML='<div class="no-sales">Ningún vehículo coincide con los filtros</div>'; return; }
+    container.innerHTML = (viewMode==="grid" ? renderGrid(filtered) : renderList(filtered));
+  }
+
+  window.applyVehFilters=function(){ renderVehList(); };
+  window.limpiarVehFiltros=function(){
+    ["vfBuscar","vfPrecioMin","vfPrecioMax","vfKmMin","vfKmMax","vfEstado","vfSucursal","vfCarroceria","vfCombustible","vfPublicacion"].forEach(function(id){document.getElementById(id).value="";});
+    renderVehList();
+  };
   function statC(n,l){return '<div class="stat-card"><div class="stat-num">'+n+'</div><div class="stat-label">'+l+'</div></div>';}
 
   function vehStatus(v) {
@@ -851,6 +943,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     var v=vehiculos.find(function(x){return x.id===id;}); if(!v) return;
     document.getElementById("vtaVehId").value=v.id;
     document.getElementById("vtaVehLabel").value=v.marca+" "+v.modelo+" "+v.anio;
+    document.getElementById("vtaPrecioPublicado").value=v.precio||0;
     document.getElementById("vtaPrecio").value=v.precio||0;
     document.getElementById("vtaFecha").value=today();
     document.getElementById("vtaClienteId").value="";
@@ -925,6 +1018,16 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 
   window.recalcVenta=function(){
     var precio=parseInt(document.getElementById("vtaPrecio").value||0);
+    var publicado=parseInt(document.getElementById("vtaPrecioPublicado").value||0);
+    var descInfo=document.getElementById("vtaDescuentoInfo");
+    if(publicado>0 && precio>0 && precio<publicado){
+      var desc=publicado-precio, pct=Math.round(desc/publicado*100);
+      descInfo.textContent="Descuento: US$ "+fmtN(desc)+" ("+pct+"% menos que el publicado)";
+      descInfo.style.color="var(--amber)";
+    } else if(precio>publicado && publicado>0){
+      descInfo.textContent="El precio de venta supera al publicado por US$ "+fmtN(precio-publicado)+".";
+      descInfo.style.color="var(--ink-mute)";
+    } else { descInfo.textContent=""; }
     var toma=document.getElementById("vtaHayToma").checked?parseInt(document.getElementById("vtaTomaValor").value||0):0;
     var inicial=parseInt(document.getElementById("vtaMontoInicial").value||0);
     var financia=document.getElementById("vtaHayFinanciacion").checked;
@@ -957,6 +1060,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       vehiculoId:document.getElementById("vtaVehId").value,
       vendedorId:document.getElementById("vtaVendedor").value,
       clienteId:document.getElementById("vtaClienteId").value,
+      precioPublicado:parseInt(document.getElementById("vtaPrecioPublicado").value||0),
       precioVenta:parseInt(document.getElementById("vtaPrecio").value),
       tomaValor:document.getElementById("vtaHayToma").checked?parseInt(document.getElementById("vtaTomaValor").value||0):0,
       tomaDescripcion:document.getElementById("vtaHayToma").checked?document.getElementById("vtaTomaDesc").value:"",
@@ -1142,14 +1246,20 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       '</div>';
 
     function shortSuc(s){if(!s)return'—';var p=s.split(',');return p[p.length-1].trim();}
-    function metodoTxt(m){return m==="transferencia"?"Transferencia":"Efectivo";}
-    var html=resumen+'<div style="overflow-x:auto"><table class="sales-table"><thead><tr><th>Fecha</th><th>Vehículo</th><th>Sucursal</th><th>Vendedor</th><th>Precio</th><th>Toma</th><th>Recibido</th><th>Forma de pago</th><th>Comisión</th></tr></thead><tbody>';
+    function metodoTxt(m){return m==="transferencia"?"Transferencia":(m==="financiacion_bancaria"?"Financiación bancaria":"Efectivo");}
+    var html=resumen+'<div style="overflow-x:auto"><table class="sales-table"><thead><tr><th>Fecha</th><th>Vehículo</th><th>Sucursal</th><th>Vendedor</th><th>Precio (venta)</th><th>Toma</th><th>Recibido</th><th>Forma de pago</th><th>Comisión</th></tr></thead><tbody>';
     filteredVentas.forEach(function(v){
       var veh=v.vehiculo||{};
       var imgTag=veh.foto?'<img src="/'+esc(veh.foto)+'">':'';
       var toma=v.tomaPago?('-US$ '+fmtN(v.tomaPago.valor)+'<span class="toma-tag">'+esc(v.tomaPago.descripcion)+'</span>'):'—';
       var saldoTxt=v.montoFinanciado>0?(' <span class="toma-tag" style="background:var(--blue)">financia US$ '+fmtN(v.montoFinanciado)+'</span>'):'';
-      html+='<tr><td>'+fmtD(v.fecha)+'</td><td><div class="td-veh">'+imgTag+'<span>'+esc(veh.marca)+' '+esc(veh.modelo)+' '+veh.anio+'</span></div></td><td>'+esc(shortSuc(v.sucursal))+'</td><td>'+esc(v.vendedorNombre)+'</td><td>US$ '+fmtN(v.precioVenta)+'</td><td>'+toma+'</td><td><strong>US$ '+fmtN(v.ingresoNeto)+'</strong>'+saldoTxt+'</td><td>'+metodoTxt(v.metodoPago)+'</td><td>US$ '+fmtN(v.comisionVendedor)+'</td></tr>';
+      var pub=v.precioPublicado||v.precioVenta;
+      var precioCell='US$ '+fmtN(v.precioVenta);
+      if(pub>v.precioVenta){
+        var pct=Math.round((pub-v.precioVenta)/pub*100);
+        precioCell='<strong>US$ '+fmtN(v.precioVenta)+'</strong><div style="font-size:.72rem;color:var(--ink-mute)">pub. US$ '+fmtN(pub)+' · <span style="color:var(--amber)">-'+pct+'%</span></div>';
+      }
+      html+='<tr><td>'+fmtD(v.fecha)+'</td><td><div class="td-veh">'+imgTag+'<span>'+esc(veh.marca)+' '+esc(veh.modelo)+' '+veh.anio+'</span></div></td><td>'+esc(shortSuc(v.sucursal))+'</td><td>'+esc(v.vendedorNombre)+'</td><td>'+precioCell+'</td><td>'+toma+'</td><td><strong>US$ '+fmtN(v.ingresoNeto)+'</strong>'+saldoTxt+'</td><td>'+metodoTxt(v.metodoPago)+'</td><td>US$ '+fmtN(v.comisionVendedor)+'</td></tr>';
     });
     html+='</tbody></table></div>';
 

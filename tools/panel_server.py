@@ -360,6 +360,7 @@ def api_ventas_create():
     vnd_id = body.get("vendedorId", "")
     cli_id = body.get("clienteId", "")
     precio_venta = int(body.get("precioVenta", 0))
+    precio_publicado = int(body.get("precioPublicado", precio_venta))
     toma_valor = int(body.get("tomaValor", 0))
     toma_desc = body.get("tomaDescripcion", "").strip()
     metodo_pago = body.get("metodoPago", "efectivo")
@@ -432,6 +433,7 @@ def api_ventas_create():
         "vendedorNombre": vnd.get("nombre", ""),
         "clienteId": cli_id,
         "clienteNombre": cli.get("nombre", ""),
+        "precioPublicado": precio_publicado,
         "precioVenta": precio_venta,
         "tomaPago": {"descripcion": toma_desc, "valor": toma_valor} if toma_valor > 0 else None,
         "metodoPago": metodo_pago,
