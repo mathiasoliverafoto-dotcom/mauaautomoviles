@@ -317,7 +317,6 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
         <select id="vfCarroceria" onchange="applyVehFilters()"><option value="">Toda carrocería</option></select>
         <select id="vfCombustible" onchange="applyVehFilters()"><option value="">Todo combustible</option></select>
         <select id="vfTransmision" onchange="applyVehFilters()"><option value="">Toda transmisión</option></select>
-        <select id="vfTraccion" onchange="applyVehFilters()"><option value="">Toda tracción</option></select>
         <select id="vfPublicacion" onchange="applyVehFilters()">
           <option value="">Publicados y ocultos</option>
           <option value="pub">Solo publicados</option>
@@ -669,7 +668,6 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     fill("vfCarroceria", uniq("carroceria"));
     fill("vfCombustible", uniq("tipoMotor"));
     fill("vfTransmision", uniq("transmision"));
-    fill("vfTraccion", uniq("traccion"));
     refreshModeloOptions();
   }
 
@@ -696,7 +694,6 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     var carr=document.getElementById("vfCarroceria").value;
     var comb=document.getElementById("vfCombustible").value;
     var trans=document.getElementById("vfTransmision").value;
-    var trac=document.getElementById("vfTraccion").value;
     var pubf=document.getElementById("vfPublicacion").value;
     var pMin=parseFloat(document.getElementById("vfPrecioMin").value);
     var pMax=parseFloat(document.getElementById("vfPrecioMax").value);
@@ -716,7 +713,6 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       if(carr && v.carroceria!==carr) return false;
       if(comb && v.tipoMotor!==comb) return false;
       if(trans && v.transmision!==trans) return false;
-      if(trac && v.traccion!==trac) return false;
       if(pubf==="pub" && v.publicado===false) return false;
       if(pubf==="oculto" && v.publicado!==false) return false;
       if(!isNaN(pMin) && (v.precio||0)<pMin) return false;
@@ -743,7 +739,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 
   window.applyVehFilters=function(){ renderVehList(); };
   window.limpiarVehFiltros=function(){
-    ["vfBuscar","vfMarca","vfModelo","vfPrecioMin","vfPrecioMax","vfKmMin","vfKmMax","vfAnioMin","vfAnioMax","vfEstado","vfSucursal","vfCarroceria","vfCombustible","vfTransmision","vfTraccion","vfPublicacion"].forEach(function(id){document.getElementById(id).value="";});
+    ["vfBuscar","vfMarca","vfModelo","vfPrecioMin","vfPrecioMax","vfKmMin","vfKmMax","vfAnioMin","vfAnioMax","vfEstado","vfSucursal","vfCarroceria","vfCombustible","vfTransmision","vfPublicacion"].forEach(function(id){document.getElementById(id).value="";});
     refreshModeloOptions();
     renderVehList();
   };
