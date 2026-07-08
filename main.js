@@ -43,30 +43,36 @@
     return (data.whatsapp || "https://wa.me/59892550422") + "?text=" + encodeURIComponent(msg);
   }
 
-  /* ---- Tarjeta de vehículo (compartida por carrusel y catálogo) ---- */
+  /* ---- Etiqueta de estado (badge visible en la tarjeta) ---- */
+  function etiquetaDe(v) {
+    return v.etiqueta || (v.condicion === "usado" ? "Usado" : "Igual a 0km");
+  }
+  function etiquetaBadge(v) {
+    var et = etiquetaDe(v);
+    var cls = et === "Igual a 0km" ? "veh-badge veh-badge-0km" : "veh-badge";
+    return '<span class="' + cls + '">' + escHTML(et) + '</span>';
+  }
+
+  /* ---- Tarjeta de vehículo (compartida por carrusel y catálogo) ----
+     El precio y el kilometraje no se muestran en el sitio público. ---- */
   function vehCardHTML(v) {
-    var esUsado = v.condicion === "usado";
-    var kmTxt = esUsado ? (fmtNum(v.km) + " km") : "0 km";
-    var badgeCond = esUsado
-      ? '<span class="veh-badge">Usado</span>'
-      : '<span class="veh-badge veh-badge-0km">0 KM</span>';
     var badgeReciente = isReciente(v.fechaIngreso) ? '<span class="veh-badge veh-badge-reciente">Reciente</span>' : "";
     return ""
-      + '<article class="veh-card" data-carroceria="' + escHTML(v.carroceria) + '" data-condicion="' + escHTML(v.condicion) + '">'
+      + '<article class="veh-card" data-carroceria="' + escHTML(v.carroceria) + '" data-etiqueta="' + escHTML(etiquetaDe(v)) + '">'
       +   '<a class="veh-card-link" href="vehiculo.html?id=' + encodeURIComponent(v.id) + '" aria-label="Ver ' + escHTML(v.marca) + ' ' + escHTML(v.modelo) + '"></a>'
       +   '<div class="veh-visual" data-model="' + escHTML(v.modelo) + '"' + (v.fotos && v.fotos[0] ? ' style="background:none"' : '') + '>'
-      +     badgeReciente + badgeCond
+      +     badgeReciente + etiquetaBadge(v)
       +     (v.fotos && v.fotos[0]
           ? '<img class="veh-foto" src="' + escHTML(v.fotos[0]) + '" alt="' + escHTML(v.marca + ' ' + v.modelo) + '" loading="lazy">'
           : '<span class="veh-ghost">' + escHTML((v.marca || "").toUpperCase()) + '</span>')
       +   '</div>'
       +   '<div class="veh-body">'
-      +     '<p class="veh-tag">' + escHTML(v.carroceria) + ' · ' + v.anio + ' · ' + kmTxt + '</p>'
+      +     '<p class="veh-tag">' + escHTML(v.carroceria) + ' · ' + v.anio + '</p>'
       +     '<h3 class="veh-name">' + escHTML(v.marca) + ' ' + escHTML(v.modelo) + '</h3>'
       +     '<ul class="veh-specs"><li>' + escHTML(v.transmision) + '</li><li>' + escHTML(v.tipoMotor) + '</li></ul>'
       +     '<div class="veh-foot">'
-      +       '<span class="veh-price">' + fmtPrecio(v.precio) + '</span>'
-      +       '<a class="btn btn-small btn-wa" data-wa href="' + vehWaHref(v) + '" target="_blank" rel="noopener">Consultar</a>'
+      +       '<span class="veh-price">A consultar</span>'
+      +       '<a class="btn btn-small btn-wa" data-wa href="' + vehWaHref(v) + '" target="_blank" rel="noopener">WhatsApp</a>'
       +     '</div>'
       +   '</div>'
       + '</article>';
@@ -407,20 +413,16 @@
 
     var vehiculos = data.vehiculos.slice();
 
-    var precios = vehiculos.filter(function (v) { return v.precio > 0; }).map(function (v) { return v.precio; });
     var anios = vehiculos.map(function (v) { return v.anio; });
-    var kms = vehiculos.map(function (v) { return v.km; });
     var bounds = {
-      precio: precios.length ? [floorTo(Math.min.apply(null, precios), 500), ceilTo(Math.max.apply(null, precios), 500)] : [0, 100000],
-      anio: [Math.min.apply(null, anios), Math.max.apply(null, anios)],
-      km: [floorTo(Math.min.apply(null, kms), 1000), ceilTo(Math.max.apply(null, kms), 1000)]
+      anio: [Math.min.apply(null, anios), Math.max.apply(null, anios)]
     };
 
     var state = {
-      ubicacion: [], marca: [], modelo: [], carroceria: [],
+      ubicacion: [], marca: [], modelo: [], carroceria: [], etiqueta: [],
       tipoMotor: [], transmision: [], traccion: [],
       primerDueno: false,
-      precio: bounds.precio.slice(), anio: bounds.anio.slice(), km: bounds.km.slice(),
+      anio: bounds.anio.slice(),
       sort: "recientes"
     };
 
@@ -471,6 +473,17 @@
         var idx = state.carroceria.indexOf(val);
         if (idx === -1) { state.carroceria.push(val); btn.classList.add("is-active"); }
         else { state.carroceria.splice(idx, 1); btn.classList.remove("is-active"); }
+        applyAndRender();
+      });
+    });
+
+    /* ---- Etiqueta (estado): chips multi-select ---- */
+    $$("[data-cf-etiqueta]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var val = btn.dataset.cfEtiqueta;
+        var idx = state.etiqueta.indexOf(val);
+        if (idx === -1) { state.etiqueta.push(val); btn.classList.add("is-active"); }
+        else { state.etiqueta.splice(idx, 1); btn.classList.remove("is-active"); }
         applyAndRender();
       });
     });
@@ -560,9 +573,7 @@
       };
     }
     var rangeCtl = {
-      precio: initRange("precio", bounds.precio[0], bounds.precio[1], 500),
-      anio: initRange("anio", bounds.anio[0], bounds.anio[1], 1),
-      km: initRange("km", bounds.km[0], bounds.km[1], 1000)
+      anio: initRange("anio", bounds.anio[0], bounds.anio[1], 1)
     };
 
     /* ---- Acordeón de grupos de filtro ---- */
@@ -626,26 +637,18 @@
         var b = document.querySelector('[data-cf-body="' + v + '"]');
         if (b) b.classList.remove("is-active");
       });
+      pushArr("etiqueta", null, function (v) {
+        var b = document.querySelector('[data-cf-etiqueta="' + v + '"]');
+        if (b) b.classList.remove("is-active");
+      });
       pushArr("tipoMotor");
       pushArr("transmision");
       pushArr("traccion");
 
-      if (state.precio[0] !== bounds.precio[0] || state.precio[1] !== bounds.precio[1]) {
-        chips.push({
-          text: "US$ " + fmtNum(state.precio[0]) + "–" + fmtNum(state.precio[1]),
-          onRemove: function () { state.precio = bounds.precio.slice(); if (rangeCtl.precio) rangeCtl.precio.reset(); applyAndRender(); }
-        });
-      }
       if (state.anio[0] !== bounds.anio[0] || state.anio[1] !== bounds.anio[1]) {
         chips.push({
           text: state.anio[0] + "–" + state.anio[1],
           onRemove: function () { state.anio = bounds.anio.slice(); if (rangeCtl.anio) rangeCtl.anio.reset(); applyAndRender(); }
-        });
-      }
-      if (state.km[0] !== bounds.km[0] || state.km[1] !== bounds.km[1]) {
-        chips.push({
-          text: fmtNum(state.km[0]) + "–" + fmtNum(state.km[1]) + " km",
-          onRemove: function () { state.km = bounds.km.slice(); if (rangeCtl.km) rangeCtl.km.reset(); applyAndRender(); }
         });
       }
       if (state.primerDueno) {
@@ -670,21 +673,17 @@
       if (state.marca.length && state.marca.indexOf(v.marca) === -1) return false;
       if (state.modelo.length && state.modelo.indexOf(v.marca + "|" + v.modelo) === -1) return false;
       if (state.carroceria.length && state.carroceria.indexOf(v.carroceria) === -1) return false;
+      if (state.etiqueta.length && state.etiqueta.indexOf(etiquetaDe(v)) === -1) return false;
       if (state.tipoMotor.length && state.tipoMotor.indexOf(v.tipoMotor) === -1) return false;
       if (state.transmision.length && state.transmision.indexOf(v.transmision) === -1) return false;
       if (state.traccion.length && state.traccion.indexOf(v.traccion) === -1) return false;
       if (state.primerDueno && v.primerDueno !== true) return false;
-      if (v.precio > 0 && (v.precio < state.precio[0] || v.precio > state.precio[1])) return false;
       if (v.anio < state.anio[0] || v.anio > state.anio[1]) return false;
-      if (v.km < state.km[0] || v.km > state.km[1]) return false;
       return true;
     }
     function sortList(list) {
       var copy = list.slice();
-      if (state.sort === "precio-asc") copy.sort(function (a, b) { return a.precio - b.precio; });
-      else if (state.sort === "precio-desc") copy.sort(function (a, b) { return b.precio - a.precio; });
-      else if (state.sort === "anio-desc") copy.sort(function (a, b) { return b.anio - a.anio; });
-      else if (state.sort === "km-asc") copy.sort(function (a, b) { return a.km - b.km; });
+      if (state.sort === "anio-desc") copy.sort(function (a, b) { return b.anio - a.anio; });
       else copy.sort(function (a, b) { return new Date(b.fechaIngreso) - new Date(a.fechaIngreso); });
       return copy;
     }
@@ -705,10 +704,8 @@
       }
 
       var activeCount = state.ubicacion.length + state.marca.length + state.modelo.length + state.carroceria.length
-        + state.tipoMotor.length + state.transmision.length + state.traccion.length + (state.primerDueno ? 1 : 0)
-        + (state.precio[0] !== bounds.precio[0] || state.precio[1] !== bounds.precio[1] ? 1 : 0)
-        + (state.anio[0] !== bounds.anio[0] || state.anio[1] !== bounds.anio[1] ? 1 : 0)
-        + (state.km[0] !== bounds.km[0] || state.km[1] !== bounds.km[1] ? 1 : 0);
+        + state.etiqueta.length + state.tipoMotor.length + state.transmision.length + state.traccion.length + (state.primerDueno ? 1 : 0)
+        + (state.anio[0] !== bounds.anio[0] || state.anio[1] !== bounds.anio[1] ? 1 : 0);
       var openCountEl = $("[data-cf-open-count]");
       if (openCountEl) { openCountEl.textContent = activeCount; openCountEl.hidden = activeCount === 0; }
     }
@@ -719,15 +716,14 @@
 
     /* ---- Limpiar filtros ---- */
     function clearAll() {
-      state.ubicacion = []; state.marca = []; state.modelo = []; state.carroceria = [];
+      state.ubicacion = []; state.marca = []; state.modelo = []; state.carroceria = []; state.etiqueta = [];
       state.tipoMotor = []; state.transmision = []; state.traccion = []; state.primerDueno = false;
-      state.precio = bounds.precio.slice(); state.anio = bounds.anio.slice(); state.km = bounds.km.slice();
+      state.anio = bounds.anio.slice();
       $$("[data-cf]").forEach(function (cb) { cb.checked = false; });
       $$("[data-cf-body]").forEach(function (b) { b.classList.remove("is-active"); });
+      $$("[data-cf-etiqueta]").forEach(function (b) { b.classList.remove("is-active"); });
       if (pdInput) pdInput.checked = false;
-      if (rangeCtl.precio) rangeCtl.precio.reset();
       if (rangeCtl.anio) rangeCtl.anio.reset();
-      if (rangeCtl.km) rangeCtl.km.reset();
       renderModelos();
       applyAndRender();
     }
@@ -855,8 +851,9 @@
     /* ---- Badges ---- */
     var badgeCond = $("[data-pdp-badge-cond]");
     if (badgeCond) {
-      badgeCond.textContent = esUsado ? "Usado" : "0 KM";
-      badgeCond.classList.toggle("veh-badge-0km", !esUsado);
+      var etDetalle = etiquetaDe(v);
+      badgeCond.textContent = etDetalle;
+      badgeCond.classList.toggle("veh-badge-0km", etDetalle === "Igual a 0km");
     }
     var badgeReciente = $("[data-pdp-badge-reciente]");
     if (badgeReciente) badgeReciente.hidden = !isReciente(v.fechaIngreso);
@@ -865,14 +862,13 @@
     var marcaEl = $("[data-pdp-marca]"); if (marcaEl) marcaEl.textContent = v.marca;
     var titleEl = $("[data-pdp-title]"); if (titleEl) titleEl.textContent = v.marca + " " + v.modelo;
     var versionEl = $("[data-pdp-version]"); if (versionEl) versionEl.textContent = v.version || "";
-    var priceEl = $("[data-pdp-price]"); if (priceEl) priceEl.textContent = fmtPrecio(v.precio);
+    var priceEl = $("[data-pdp-price]"); if (priceEl) priceEl.textContent = "Consultar";
 
     var quickEl = $("[data-pdp-quickspecs]");
     if (quickEl) {
-      var kmTxt = esUsado ? (fmtNum(v.km) + " km") : "0 km";
       quickEl.innerHTML = ""
         + "<li><strong>" + v.anio + "</strong> · Año</li>"
-        + "<li><strong>" + kmTxt + "</strong> · Recorridos</li>"
+        + "<li><strong>" + escHTML(etiquetaDe(v)) + "</strong> · Estado</li>"
         + "<li><strong>" + escHTML(v.tipoMotor) + "</strong> · Combustible</li>"
         + "<li><strong>" + escHTML(v.transmision) + "</strong> · Transmisión</li>";
     }
@@ -915,7 +911,7 @@
         { ico: "transmision", label: "Transmisión", value: v.transmision },
         { ico: "traccion", label: "Tracción", value: v.traccion },
         { ico: "anio", label: "Año", value: String(v.anio) },
-        { ico: "km", label: esUsado ? "Kilometraje" : "Condición", value: esUsado ? (fmtNum(v.km) + " km") : "0 km" }
+        { ico: "km", label: "Estado", value: etiquetaDe(v) }
       ];
       specsGrid.innerHTML = specs.map(function (s) {
         return '<div class="pdp-spec">' + (PDP_ICONS[s.ico] || "") + "<strong>" + escHTML(s.value) + "</strong><span>" + escHTML(s.label) + "</span></div>";

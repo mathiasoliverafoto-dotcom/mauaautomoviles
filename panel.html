@@ -377,8 +377,9 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
           <div class="form-group"><label>Modelo</label><input type="text" id="fModelo" required placeholder="Hilux, Tiggo 2 Pro..."></div>
         </div>
         <div class="form-row full"><div class="form-group"><label>Versión</label><input type="text" id="fVersion" placeholder="1.6 Doble Cabina..."></div></div>
-        <div class="form-row">
-          <div class="form-group"><label>Condición</label><select id="fCondicion"><option value="usado">Usado</option><option value="0km">0 km</option></select></div>
+        <div class="form-row triple">
+          <div class="form-group"><label>Condición</label><select id="fCondicion" onchange="onCondicionChange()"><option value="usado">Usado</option><option value="0km">0 km</option></select></div>
+          <div class="form-group"><label>Etiqueta (catálogo)</label><select id="fEtiqueta"><option value="Igual a 0km">Igual a 0km</option><option value="Buen estado">Buen estado</option><option value="Usado">Usado</option></select></div>
           <div class="form-group"><label>Carrocería</label><select id="fCarroceria"><option>Hatch</option><option>Sedán</option><option>Pickup</option><option>SUV</option><option>Utilitario</option></select></div>
         </div>
         <div class="form-row triple">
@@ -671,10 +672,12 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     document.getElementById("fModelo").value=isEdit?v.modelo:"";
     document.getElementById("fVersion").value=isEdit?(v.version||""):"";
     document.getElementById("fCondicion").value=isEdit?v.condicion:"usado";
+    document.getElementById("fEtiqueta").value=isEdit?(v.etiqueta||"Usado"):"Usado";
     document.getElementById("fCarroceria").value=isEdit?v.carroceria:"Hatch";
     document.getElementById("fAnio").value=isEdit?v.anio:new Date().getFullYear();
     document.getElementById("fKm").value=isEdit?v.km:0;
     document.getElementById("fPrecio").value=isEdit?v.precio:0;
+    onCondicionChange();
     document.getElementById("fMotor").value=isEdit?v.tipoMotor:"Nafta";
     document.getElementById("fTransmision").value=isEdit?v.transmision:"Manual";
     document.getElementById("fTraccion").value=isEdit?v.traccion:"Delantera";
@@ -688,12 +691,18 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   };
   window.closeVehModal=function(){document.getElementById("vehModalOverlay").classList.remove("is-open");};
   window.editVehiculo=function(id){var v=vehiculos.find(function(x){return x.id===id;}); if(v) openVehModal(v);};
+  window.onCondicionChange=function(){
+    var es0km=document.getElementById("fCondicion").value==="0km";
+    var km=document.getElementById("fKm");
+    if(es0km){ km.value=0; km.disabled=true; km.style.opacity=".5"; }
+    else { km.disabled=false; km.style.opacity=""; }
+  };
 
   window.saveVehiculo=function(){
     var form=document.getElementById("vehForm");
     if(!form.checkValidity()){form.reportValidity();return;}
     var id=document.getElementById("fId").value;
-    var body={marca:document.getElementById("fMarca").value,modelo:document.getElementById("fModelo").value,version:document.getElementById("fVersion").value,condicion:document.getElementById("fCondicion").value,carroceria:document.getElementById("fCarroceria").value,anio:parseInt(document.getElementById("fAnio").value),km:parseInt(document.getElementById("fKm").value),precio:parseInt(document.getElementById("fPrecio").value),tipoMotor:document.getElementById("fMotor").value,transmision:document.getElementById("fTransmision").value,traccion:document.getElementById("fTraccion").value,ubicacion:document.getElementById("fUbicacion").value,fechaIngreso:document.getElementById("fFecha").value,primerDueno:document.getElementById("fPrimerDueno").checked,publicado:document.getElementById("fPublicado").checked,fotos:editFotos};
+    var body={marca:document.getElementById("fMarca").value,modelo:document.getElementById("fModelo").value,version:document.getElementById("fVersion").value,condicion:document.getElementById("fCondicion").value,etiqueta:document.getElementById("fEtiqueta").value,carroceria:document.getElementById("fCarroceria").value,anio:parseInt(document.getElementById("fAnio").value),km:parseInt(document.getElementById("fKm").value||0),precio:parseInt(document.getElementById("fPrecio").value),tipoMotor:document.getElementById("fMotor").value,transmision:document.getElementById("fTransmision").value,traccion:document.getElementById("fTraccion").value,ubicacion:document.getElementById("fUbicacion").value,fechaIngreso:document.getElementById("fFecha").value,primerDueno:document.getElementById("fPrimerDueno").checked,publicado:document.getElementById("fPublicado").checked,fotos:editFotos};
     var url=id?"/api/vehiculos/"+id:"/api/vehiculos";
     document.getElementById("btnSaveVeh").disabled=true;
     api(url,{method:id?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(function(){closeVehModal();loadAll();toast(id?"Vehículo actualizado":"Vehículo creado");}).catch(function(e){toast(e.message,"err");}).finally(function(){document.getElementById("btnSaveVeh").disabled=false;});

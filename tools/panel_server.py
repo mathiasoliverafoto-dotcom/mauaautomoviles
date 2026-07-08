@@ -128,6 +128,7 @@ def api_vehiculos_create():
         "modelo": body.get("modelo", "").strip(),
         "version": body.get("version", "").strip(),
         "condicion": body.get("condicion", "usado"),
+        "etiqueta": body.get("etiqueta", "Usado"),
         "carroceria": body.get("carroceria", "Hatch"),
         "anio": int(body.get("anio", datetime.now().year)),
         "km": int(body.get("km", 0)),
@@ -154,7 +155,7 @@ def api_vehiculos_update(vid):
 
     for i, v in enumerate(vehiculos):
         if v["id"] == vid:
-            for key in ["marca", "modelo", "version", "condicion", "carroceria",
+            for key in ["marca", "modelo", "version", "condicion", "etiqueta", "carroceria",
                         "tipoMotor", "transmision", "traccion", "ubicacion", "fechaIngreso"]:
                 if key in body:
                     vehiculos[i][key] = body[key].strip() if isinstance(body[key], str) else body[key]
@@ -491,8 +492,14 @@ def api_financiaciones_pagar(fid):
 
 @app.route("/data/vehiculos.json")
 def public_vehiculos():
+    # El sitio público no expone precio ni kilometraje: se cargan en el
+    # panel pero no se muestran ni se envían al frontend.
     vehiculos = read_json("vehiculos.json")
-    publicados = [v for v in vehiculos if v.get("publicado", True)]
+    publicados = []
+    for v in vehiculos:
+        if not v.get("publicado", True):
+            continue
+        publicados.append({k: val for k, val in v.items() if k not in ("precio", "km")})
     return jsonify(publicados)
 
 
