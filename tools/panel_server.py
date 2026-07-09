@@ -621,6 +621,10 @@ def api_financiaciones_pagar(fid):
             pendiente["pagada"] = True
             pendiente["fechaPago"] = body.get("fecha", datetime.now().strftime("%Y-%m-%d"))
             pendiente["metodoPago"] = metodo
+            # Sucursal donde se cobró (el cliente puede pagar en cualquiera).
+            # Sirve para atribuir el ingreso al admin de esa sucursal.
+            pendiente["sucursalCobro"] = session.get("sucursal", "")
+            pendiente["usuarioCobro"] = session.get("nombre") or session.get("user", "")
             write_json("financiaciones.json", financiaciones)
             return jsonify(f)
     return jsonify({"error": "Financiación no encontrada"}), 404

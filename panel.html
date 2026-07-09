@@ -278,6 +278,10 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   <aside class="sidebar">
     <div class="sidebar-brand"><img src="assets/img/logo-mark.svg" alt=""><span>Mauá Panel</span></div>
     <nav class="sidebar-nav">
+      <button data-nav="inicio" onclick="switchSection('inicio')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><rect x="9.5" y="13" width="5" height="7"/></svg>
+        Inicio
+      </button>
       <button data-nav="calculadora" class="is-active" onclick="switchSection('calculadora')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="8" y1="18" x2="16" y2="18"/></svg>
         Calculadora
@@ -311,8 +315,18 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   </aside>
 
   <main class="main">
+    <!-- ═══ INICIO (dashboard) ═══ -->
+    <div class="section" id="secInicio">
+      <div class="main-header"><h2>Inicio</h2><span id="inicioScope" style="font-size:.8rem;color:var(--ink-mute)"></span></div>
+      <div class="stats-row" id="inicioStats"></div>
+      <h3 style="font-size:.95rem;margin:1.6rem 0 .8rem">Cuotas que vencen hoy</h3>
+      <div id="inicioVencen"></div>
+      <h3 style="font-size:.95rem;margin:1.8rem 0 .8rem">Cumpleaños de hoy 🎂</h3>
+      <div id="inicioCumples"></div>
+    </div>
+
     <!-- ═══ CALCULADORA ═══ -->
-    <div class="section is-active" id="secCalculadora">
+    <div class="section" id="secCalculadora">
       <div class="main-header">
         <h2>Calculadora de financiación</h2>
         <span style="font-size:.8rem;color:var(--ink-mute)">Interés 1,5% mensual</span>
@@ -670,8 +684,8 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   var cliModalContext = null;
   var currentUser = { rol: "admin_general", sucursal: "" };
   var PERMS = {
-    admin_general:  { calculadora:1, vehiculos:1, clientes:1, personal:1, cobranzas:1, finanzas:1, borrarVeh:1 },
-    admin_sucursal: { calculadora:1, vehiculos:1, clientes:1, cobranzas:1, finanzas:1, borrarVeh:1 },
+    admin_general:  { inicio:1, calculadora:1, vehiculos:1, clientes:1, personal:1, cobranzas:1, finanzas:1, borrarVeh:1 },
+    admin_sucursal: { inicio:1, calculadora:1, vehiculos:1, clientes:1, cobranzas:1, finanzas:1, borrarVeh:1 },
     vendedor:       { calculadora:1, vehiculos:1, clientes:1 }
   };
   function can(x){ return !!(PERMS[currentUser.rol]||PERMS.vendedor)[x]; }
@@ -754,10 +768,10 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     document.querySelectorAll("[data-nav]").forEach(function(b){
       b.style.display=can(b.dataset.nav)?"":"none";
     });
-    // Si la sección activa no está permitida, volver a Vehículos.
+    // Landing por rol: los admins arrancan en Inicio; el vendedor en Calculadora.
     var active=document.querySelector(".section.is-active");
     var activeName=active?active.id.replace("sec","").toLowerCase():"";
-    if(activeName && !can(activeName)) switchSection("vehiculos");
+    if(!activeName || !can(activeName)) switchSection(can("inicio")?"inicio":"calculadora");
   }
   document.getElementById("loginForm").addEventListener("submit",function(e){
     e.preventDefault();
@@ -777,6 +791,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     if(name==="clientes") renderClientes();
     if(name==="cobranzas") renderCobranzas();
     if(name==="calculadora") runCalc();
+    if(name==="inicio") renderInicio();
   };
 
   // ── Load all data (según permisos del rol) ──
@@ -787,6 +802,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       vehiculos=res[0]; vendedores=res[1]; ventas=res[2]; clientes=res[3]; financiaciones=res[4];
       initFinDefaults();
       renderVehiculos(); renderClientes(); runCalc();
+      if(can("inicio")) renderInicio();
       if(can("personal")) renderPersonal();
       if(can("finanzas")) renderFinanzas();
       if(can("cobranzas")) renderCobranzas();
@@ -1424,6 +1440,81 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   window.pagarCuota=function(id,metodo){
     api("/api/financiaciones/"+id+"/pagar",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({metodoPago:metodo})}).then(function(){loadAll();toast("Pago registrado");}).catch(function(e){toast(e.message,"err");});
   };
+
+  // ── Inicio (dashboard) ──────────────
+  function renderInicio(){
+    var hoy=today();
+    var esSucursal=currentUser.rol==="admin_sucursal";
+    document.getElementById("inicioScope").textContent=esSucursal?("Sucursal: "+(currentUser.sucursal||"").split(",")[0]):"Todas las sucursales";
+
+    // Ingresos del día. Las ventas ya vienen filtradas por sucursal desde
+    // el backend para el admin de sucursal; las cuotas se atribuyen a la
+    // sucursal donde se cobraron.
+    var ventasHoy=ventas.filter(function(v){return v.fecha===hoy;});
+    var ingresoVentas=ventasHoy.reduce(function(a,v){return a+(v.ingresoNeto||0);},0);
+    var ingresoCuotas=0, cobrosHoy=0;
+    financiaciones.forEach(function(f){
+      f.cuotas.forEach(function(c){
+        if(c.pagada && c.fechaPago===hoy){
+          if(esSucursal && (c.sucursalCobro||"")!==currentUser.sucursal) return;
+          ingresoCuotas+=c.valor; cobrosHoy++;
+        }
+      });
+    });
+    document.getElementById("inicioStats").innerHTML=
+      statC("US$ "+fmtN(ingresoVentas),"Ingresos por ventas hoy")+
+      statC("US$ "+fmtN(ingresoCuotas),"Ingresos por cuotas hoy")+
+      statC("US$ "+fmtN(ingresoVentas+ingresoCuotas),"Total del día")+
+      statC(ventasHoy.length+" vta · "+cobrosHoy+" cobro","Movimientos hoy");
+
+    // Cuotas que vencen hoy — lista general (todas las sucursales): el
+    // cliente puede pagar en cualquiera.
+    var vencen=[];
+    financiaciones.forEach(function(f){
+      f.cuotas.forEach(function(c){ if(!c.pagada && c.vencimiento===hoy) vencen.push({f:f,c:c}); });
+    });
+    var vwrap=document.getElementById("inicioVencen");
+    if(!vencen.length){ vwrap.innerHTML='<div class="no-sales">No hay cuotas que venzan hoy.</div>'; }
+    else {
+      vwrap.innerHTML=vencen.map(function(it){
+        var f=it.f, c=it.c;
+        var msg="Hola "+f.clienteNombre+"! Te recordamos que hoy vence tu cuota de US$ "+fmtN(c.valor)+" correspondiente a tu compra en Mauá Automóviles. ¡Muchas gracias por confiar en nosotros! 🚗";
+        var waHref="https://wa.me/"+waLink(f.clienteTelefono)+"?text="+encodeURIComponent(msg);
+        return '<div class="cobranza-card">'+
+          '<div class="cobranza-info"><div class="cb-cliente">'+esc(f.clienteNombre)+'</div><div class="cb-veh">'+esc(f.vehiculo)+'</div></div>'+
+          '<div class="cobranza-prog">cuota '+c.numero+'/'+f.cantidadCuotas+'</div>'+
+          '<div class="cobranza-venc"><div class="cb-valor">US$ '+fmtN(c.valor)+'</div></div>'+
+          '<div class="cobranza-actions">'+
+            '<a class="btn-wa-mini" href="'+waHref+'" target="_blank" rel="noopener">WhatsApp</a>'+
+            '<button class="btn btn-outline btn-sm" onclick="togglePagoBox(\'ini-'+f.id+'\')">Registrar pago</button>'+
+          '</div>'+
+          '<div class="pago-box" id="pagoBox-ini-'+f.id+'" style="display:none;width:100%;margin-top:.6rem;gap:.5rem;justify-content:flex-end">'+
+            '<button class="btn btn-success btn-sm" onclick="pagarCuota(\''+f.id+'\',\'efectivo\')">Efectivo</button>'+
+            '<button class="btn btn-success btn-sm" onclick="pagarCuota(\''+f.id+'\',\'transferencia\')">Transferencia</button>'+
+          '</div>'+
+        '</div>';
+      }).join("");
+    }
+
+    // Cumpleaños de hoy (compara mes-día).
+    var md=hoy.slice(5);
+    var cumples=clientes.filter(function(c){return c.fechaNacimiento && c.fechaNacimiento.slice(5)===md;});
+    var cwrap=document.getElementById("inicioCumples");
+    if(!cumples.length){ cwrap.innerHTML='<div class="no-sales">Nadie cumple años hoy.</div>'; }
+    else {
+      cwrap.innerHTML=cumples.map(function(c){
+        var extra="";
+        var y=c.fechaNacimiento?parseInt(c.fechaNacimiento.slice(0,4),10):0;
+        if(y) extra=" · cumple "+(parseInt(hoy.slice(0,4),10)-y);
+        var msg="¡Feliz cumpleaños "+c.nombre+"! 🎉🎂 Todo el equipo de Mauá Automóviles te desea un día espectacular. ¡Gracias por confiar en nosotros!";
+        var waHref="https://wa.me/"+waLink(c.telefono)+"?text="+encodeURIComponent(msg);
+        return '<div class="cobranza-card">'+
+          '<div class="cobranza-info"><div class="cb-cliente">🎂 '+esc(c.nombre)+'</div>'+(c.telefono?'<div class="cb-veh">'+esc(c.telefono)+extra+'</div>':'')+'</div>'+
+          '<div class="cobranza-actions"><a class="btn-wa-mini" href="'+waHref+'" target="_blank" rel="noopener">Saludar por WhatsApp</a></div>'+
+        '</div>';
+      }).join("");
+    }
+  }
 
   // ── Finanzas ────────────────────────
   var finPeriod="dia";
