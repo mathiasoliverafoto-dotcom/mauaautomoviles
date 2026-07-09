@@ -307,15 +307,9 @@ def _vendedor_publico(v, full=False):
     return out
 
 def _aplicar_acceso(vend, body, vendedores):
-    """Aplica (o quita) el acceso al panel sobre un registro de vendedor.
-    Devuelve un mensaje de error, o None si todo salió bien."""
-    if not body.get("tieneAcceso"):
-        vend["username"] = ""
-        vend["password"] = ""
-        vend["rol"] = ""
-        vend["sucursal"] = ""
-        return None
-
+    """Aplica el acceso al panel sobre un registro de persona. El acceso
+    es obligatorio: toda persona registrada tiene login. Devuelve un
+    mensaje de error, o None si todo salió bien."""
     username = (body.get("username") or "").strip().lower()
     rol = body.get("rol", "vendedor")
     sucursal = (body.get("sucursal") or "").strip()
@@ -384,15 +378,13 @@ def api_vendedores_update(vid):
             if "activo" in body:
                 vendedores[i]["activo"] = bool(body["activo"])
 
-            if "tieneAcceso" in body:
+            if "username" in body or "rol" in body:
+                # No dejar al sistema sin ningún administrador general.
                 era_admin_general = v.get("rol") == "admin_general" and v.get("username")
-                deja_de_ser_admin_general = era_admin_general and (
-                    not body.get("tieneAcceso") or body.get("rol") != "admin_general"
-                )
-                if deja_de_ser_admin_general:
+                if era_admin_general and body.get("rol") != "admin_general":
                     otros = [x for x in vendedores if x["id"] != vid and x.get("rol") == "admin_general" and x.get("username")]
                     if not otros:
-                        return jsonify({"error": "Tiene que quedar al menos un administrador general con acceso"}), 400
+                        return jsonify({"error": "Tiene que quedar al menos un administrador general"}), 400
                 err = _aplicar_acceso(vendedores[i], body, vendedores)
                 if err:
                     return jsonify({"error": err}), 400

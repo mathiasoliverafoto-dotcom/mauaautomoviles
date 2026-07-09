@@ -522,11 +522,11 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
           </div>
         </div>
 
-        <div class="form-toggle" style="padding-top:.5rem;margin-bottom:.8rem"><input type="checkbox" id="vndHayAcceso" onchange="toggleAcceso()"><label for="vndHayAcceso">Tiene acceso al panel (login)</label></div>
-        <div id="accesoFields" style="display:none">
+        <div style="border-top:1px solid var(--line);margin:.4rem 0 1rem;padding-top:.9rem">
+          <p style="font-size:.8rem;font-weight:600;color:var(--ink-soft);margin-bottom:.7rem">Acceso al panel</p>
           <div class="form-row">
-            <div class="form-group"><label>Usuario (para ingresar)</label><input type="text" id="vndUsername" autocomplete="off" placeholder="jperez"></div>
-            <div class="form-group"><label>Contraseña</label><input type="text" id="vndPassword" autocomplete="new-password" placeholder="dejar vacío para no cambiar"></div>
+            <div class="form-group"><label>Usuario (para ingresar)</label><input type="text" id="vndUsername" autocomplete="off" required placeholder="jperez"></div>
+            <div class="form-group"><label>Contraseña</label><input type="text" id="vndPassword" autocomplete="new-password" placeholder="clave inicial"></div>
           </div>
           <div class="form-row">
             <div class="form-group"><label>Tipo de permisos</label>
@@ -1087,7 +1087,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   function renderPersonal(){
     document.getElementById("personalGrid").innerHTML=vendedores.map(function(v){
       var comTxt=(!v.comision||v.comision.valor===0)?"Sin comisión":(v.comision.tipo==="porcentaje"?(v.comision.valor+"%"):("US$ "+fmtN(v.comision.valor)+" fijo"));
-      var accesoTxt=v.username?('🔑 '+esc(v.username)+' · '+esc(ROL_LABEL[v.rol]||v.rol)+(v.sucursal?(' · '+esc(v.sucursal.split(",")[0])):'')):'Sin acceso al panel';
+      var accesoTxt=v.username?('🔑 '+esc(v.username)+' · '+esc(ROL_LABEL[v.rol]||v.rol)+(v.sucursal?(' · '+esc(v.sucursal.split(",")[0])):'')):'<span style="color:var(--amber)">⚠ Falta el acceso — editá para completarlo</span>';
       return '<div class="personal-card">'+
         '<div class="pc-name">'+esc(v.nombre)+'</div>'+
         (v.telefono?'<div class="pc-detail">📞 '+esc(v.telefono)+'</div>':'')+
@@ -1102,7 +1102,6 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   }
 
   window.toggleComision=function(){document.getElementById("comFields").style.display=document.getElementById("vndHayCom").checked?"block":"none";};
-  window.toggleAcceso=function(){document.getElementById("accesoFields").style.display=document.getElementById("vndHayAcceso").checked?"block":"none";};
   window.onVndRolChange=function(){
     var esGeneral=document.getElementById("vndRol").value==="admin_general";
     document.getElementById("vndSucursalGroup").style.display=esGeneral?"none":"";
@@ -1120,14 +1119,13 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     document.getElementById("vndComTipo").value=hayCom?v.comision.tipo:"porcentaje";
     document.getElementById("vndComValor").value=hayCom?v.comision.valor:5;
 
-    var hayAcceso=isEdit&&!!v.username;
-    document.getElementById("vndHayAcceso").checked=hayAcceso;
-    document.getElementById("accesoFields").style.display=hayAcceso?"block":"none";
-    document.getElementById("vndUsername").value=hayAcceso?v.username:"";
+    // El acceso al panel es obligatorio para toda persona.
+    var yaTiene=isEdit&&!!v.username;
+    document.getElementById("vndUsername").value=yaTiene?v.username:"";
     document.getElementById("vndPassword").value="";
-    document.getElementById("vndPassword").placeholder=hayAcceso?"dejar vacío para no cambiar":"clave inicial";
-    document.getElementById("vndRol").value=hayAcceso?v.rol:"vendedor";
-    document.getElementById("vndSucursal").value=hayAcceso&&v.sucursal?v.sucursal:document.getElementById("vndSucursal").options[0].value;
+    document.getElementById("vndPassword").placeholder=yaTiene?"dejar vacío para no cambiar":"clave inicial";
+    document.getElementById("vndRol").value=(isEdit&&v.rol)?v.rol:"vendedor";
+    document.getElementById("vndSucursal").value=(isEdit&&v.sucursal)?v.sucursal:document.getElementById("vndSucursal").options[0].value;
     onVndRolChange();
 
     document.getElementById("vndModalOverlay").classList.add("is-open");
@@ -1141,15 +1139,16 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     var id=document.getElementById("vndId").value;
     var hayCom=document.getElementById("vndHayCom").checked;
     var comision=hayCom?{tipo:document.getElementById("vndComTipo").value,valor:parseFloat(document.getElementById("vndComValor").value||0)}:{tipo:"porcentaje",valor:0};
-    var hayAcceso=document.getElementById("vndHayAcceso").checked;
-    if(hayAcceso && !document.getElementById("vndUsername").value.trim()){toast("Elegí un nombre de usuario para el acceso al panel","err");return;}
-    if(hayAcceso && !id && !document.getElementById("vndPassword").value){toast("Ingresá una contraseña","err");return;}
+    var vend=id?vendedores.find(function(x){return x.id===id;}):null;
+    var yaTeniaAcceso=!!(vend&&vend.username);
+    if(!document.getElementById("vndUsername").value.trim()){toast("Elegí un nombre de usuario para el acceso al panel","err");return;}
+    if(!yaTeniaAcceso && !document.getElementById("vndPassword").value){toast("Ingresá una contraseña inicial","err");return;}
     var body={
       nombre:document.getElementById("vndNombre").value,
       telefono:document.getElementById("vndTel").value,
       email:document.getElementById("vndEmail").value,
       comision:comision,
-      tieneAcceso:hayAcceso,
+      tieneAcceso:true,
       username:document.getElementById("vndUsername").value,
       password:document.getElementById("vndPassword").value,
       rol:document.getElementById("vndRol").value,
