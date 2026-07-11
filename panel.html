@@ -5,6 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Panel — Mauá Automóviles</title>
 <link rel="icon" href="assets/img/logo-mark.svg">
+<script>
+/* Aplica el tema guardado (oscuro/claro/automático) antes de pintar, para que no haya parpadeo. */
+(function(){try{document.documentElement.setAttribute("data-theme",localStorage.getItem("mauaTheme")||"dark");}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();
+</script>
 <style>
 :root {
   --bg: #0f1114; --bg-2: #171a1f; --bg-3: #1e2228; --bg-4: #262b33;
@@ -14,6 +18,19 @@
   --line: rgba(255,255,255,.08); --radius: 12px;
   --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+}
+/* Tema claro (paleta que se aplica manualmente o de forma automática) */
+:root[data-theme="light"] {
+  --bg: #f4f5f7; --bg-2: #ffffff; --bg-3: #eef0f3; --bg-4: #e4e7ec;
+  --ink: #16191d; --ink-soft: #4b5563; --ink-mute: #7b828d;
+  --line: rgba(0,0,0,.10);
+}
+@media (prefers-color-scheme: light) {
+  :root[data-theme="auto"] {
+    --bg: #f4f5f7; --bg-2: #ffffff; --bg-3: #eef0f3; --bg-4: #e4e7ec;
+    --ink: #16191d; --ink-soft: #4b5563; --ink-mute: #7b828d;
+    --line: rgba(0,0,0,.10);
+  }
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; }
 body { font-family: var(--font); background: var(--bg); color: var(--ink); min-height: 100vh; }
@@ -244,6 +261,24 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 .toast.toast-ok { border-left: 4px solid var(--green); }
 .toast.toast-err { border-left: 4px solid var(--red); }
 
+/* ── Configuración ── */
+.config-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; align-items: start; }
+.config-card { background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.3rem; }
+.config-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: .9rem; }
+.config-hint { font-size: .8rem; color: var(--ink-mute); margin-bottom: .9rem; line-height: 1.4; }
+.config-card .form-group { margin-bottom: .8rem; }
+.theme-opts { display: flex; flex-direction: column; gap: .5rem; }
+.theme-opt { display: flex; align-items: center; gap: .7rem; padding: .7rem .9rem; background: var(--bg-3); border: 1px solid var(--line); border-radius: 10px; color: var(--ink); font-size: .88rem; font-weight: 600; text-align: left; cursor: pointer; transition: border-color .15s; }
+.theme-opt:hover { border-color: rgba(128,128,128,.5); }
+.theme-opt.is-active { border-color: var(--red); box-shadow: 0 0 0 1px var(--red); }
+.theme-swatch { width: 22px; height: 22px; border-radius: 6px; border: 1px solid var(--line); flex: none; }
+.theme-swatch-dark { background: #0f1114; }
+.theme-swatch-light { background: #f4f5f7; }
+.theme-swatch-auto { background: linear-gradient(135deg, #0f1114 0 50%, #f4f5f7 50% 100%); }
+.pw-msg { font-size: .8rem; margin-bottom: .7rem; min-height: 1em; }
+.pw-msg.err { color: var(--red-h); }
+.pw-msg.ok { color: var(--green-h); }
+
 @media (max-width: 768px) {
   html, body { overflow-x: hidden; }
 
@@ -362,6 +397,10 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       <button data-nav="finanzas" onclick="switchSection('finanzas')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
         Finanzas
+      </button>
+      <button data-nav="config" onclick="switchSection('config')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Configuración
       </button>
     </nav>
     <div class="sidebar-foot">
@@ -540,6 +579,38 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       </div>
 
       <div id="finResultados"></div>
+    </div>
+
+    <!-- ═══ CONFIGURACIÓN ═══ -->
+    <div class="section" id="secConfig">
+      <div class="main-header"><h2>Configuración</h2></div>
+      <div class="config-grid">
+        <div class="config-card">
+          <h3>Mis datos</h3>
+          <div class="vd-datos" id="configDatos"></div>
+        </div>
+
+        <div class="config-card">
+          <h3>Tema</h3>
+          <p class="config-hint">Elegí cómo se ve el panel. "Automático" sigue la configuración de tu dispositivo (claro u oscuro).</p>
+          <div class="theme-opts">
+            <button class="theme-opt" data-theme-opt="dark" onclick="setTheme('dark')"><span class="theme-swatch theme-swatch-dark"></span>Oscuro</button>
+            <button class="theme-opt" data-theme-opt="light" onclick="setTheme('light')"><span class="theme-swatch theme-swatch-light"></span>Claro</button>
+            <button class="theme-opt" data-theme-opt="auto" onclick="setTheme('auto')"><span class="theme-swatch theme-swatch-auto"></span>Automático</button>
+          </div>
+        </div>
+
+        <div class="config-card">
+          <h3>Cambiar contraseña</h3>
+          <form id="pwForm" autocomplete="off" onsubmit="cambiarPassword();return false">
+            <div class="form-group"><label>Contraseña actual</label><input type="password" id="pwActual" autocomplete="current-password"></div>
+            <div class="form-group"><label>Nueva contraseña</label><input type="password" id="pwNueva" autocomplete="new-password"></div>
+            <div class="form-group"><label>Repetir nueva contraseña</label><input type="password" id="pwNueva2" autocomplete="new-password"></div>
+            <div class="pw-msg" id="pwMsg"></div>
+            <button type="submit" class="btn btn-primary">Guardar contraseña</button>
+          </form>
+        </div>
+      </div>
     </div>
   </main>
 </div>
@@ -793,9 +864,9 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   var cliModalContext = null;
   var currentUser = { rol: "admin_general", sucursal: "" };
   var PERMS = {
-    admin_general:  { inicio:1, calculadora:1, vehiculos:1, clientes:1, personal:1, cobranzas:1, finanzas:1, borrarVeh:1 },
-    admin_sucursal: { inicio:1, calculadora:1, vehiculos:1, clientes:1, cobranzas:1, finanzas:1, borrarVeh:1 },
-    vendedor:       { calculadora:1, vehiculos:1, clientes:1 }
+    admin_general:  { inicio:1, calculadora:1, vehiculos:1, clientes:1, personal:1, cobranzas:1, finanzas:1, config:1, borrarVeh:1 },
+    admin_sucursal: { inicio:1, calculadora:1, vehiculos:1, clientes:1, cobranzas:1, finanzas:1, config:1, borrarVeh:1 },
+    vendedor:       { calculadora:1, vehiculos:1, clientes:1, config:1 }
   };
   function can(x){ return !!(PERMS[currentUser.rol]||PERMS.vendedor)[x]; }
   var ROL_LABEL = { admin_general:"Administrador general", admin_sucursal:"Administrador de sucursal", vendedor:"Vendedor" };
@@ -892,7 +963,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   // ── Auth ────────────────────────────
   function checkAuth() {
     api("/api/me").then(function(d){
-      currentUser={ rol:d.rol||"admin_general", sucursal:d.sucursal||"" };
+      currentUser={ rol:d.rol||"admin_general", sucursal:d.sucursal||"", user:d.user||"", nombre:d.nombre||"" };
       document.getElementById("loginView").style.display="none";
       document.getElementById("appView").classList.add("is-active");
       document.getElementById("userName").textContent=d.nombre||d.user;
@@ -933,6 +1004,46 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     if(name==="cobranzas") renderCobranzas();
     if(name==="calculadora") runCalc();
     if(name==="inicio") renderInicio();
+    if(name==="config") renderConfig();
+  };
+
+  // ── Configuración ───────────────────
+  window.setTheme=function(t){
+    try{ localStorage.setItem("mauaTheme",t); }catch(e){}
+    document.documentElement.setAttribute("data-theme",t);
+    document.querySelectorAll("[data-theme-opt]").forEach(function(b){
+      b.classList.toggle("is-active",b.dataset.themeOpt===t);
+    });
+  };
+  function renderConfig(){
+    function item(label,val){return '<div class="vd-item"><span>'+label+'</span>'+esc(val||"—")+'</div>';}
+    document.getElementById("configDatos").innerHTML=
+      item("Nombre", currentUser.nombre)+
+      item("Usuario", currentUser.user)+
+      item("Rol", ROL_LABEL[currentUser.rol]||currentUser.rol)+
+      item("Sucursal", (currentUser.sucursal||"").split(",")[0]||"Todas");
+    var t=("dark");
+    try{ t=localStorage.getItem("mauaTheme")||"dark"; }catch(e){}
+    document.querySelectorAll("[data-theme-opt]").forEach(function(b){
+      b.classList.toggle("is-active",b.dataset.themeOpt===t);
+    });
+    var msg=document.getElementById("pwMsg"); if(msg){msg.textContent="";msg.className="pw-msg";}
+    ["pwActual","pwNueva","pwNueva2"].forEach(function(id){var el=document.getElementById(id);if(el)el.value="";});
+  }
+  window.cambiarPassword=function(){
+    var msg=document.getElementById("pwMsg");
+    var actual=document.getElementById("pwActual").value;
+    var nueva=document.getElementById("pwNueva").value;
+    var nueva2=document.getElementById("pwNueva2").value;
+    function err(t){ msg.textContent=t; msg.className="pw-msg err"; }
+    if(!actual||!nueva){ return err("Completá la contraseña actual y la nueva."); }
+    if(nueva.length<4){ return err("La nueva contraseña debe tener al menos 4 caracteres."); }
+    if(nueva!==nueva2){ return err("Las contraseñas nuevas no coinciden."); }
+    api("/api/me/password",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({actual:actual,nueva:nueva})}).then(function(){
+      msg.textContent="Contraseña actualizada correctamente."; msg.className="pw-msg ok";
+      ["pwActual","pwNueva","pwNueva2"].forEach(function(id){document.getElementById(id).value="";});
+      toast("Contraseña actualizada");
+    }).catch(function(e){ err(e.message||"No se pudo cambiar la contraseña."); });
   };
 
   // ── Load all data (según permisos del rol) ──

@@ -124,6 +124,28 @@ def api_me():
                         "sucursal": session.get("sucursal", "")})
     return jsonify({"user": None}), 401
 
+@app.route("/api/me/password", methods=["POST"])
+@login_required
+def api_me_password():
+    """Cambio de contraseña de la propia cuenta (cualquier usuario logueado)."""
+    body = request.get_json(silent=True) or {}
+    actual = body.get("actual", "")
+    nueva = body.get("nueva", "")
+    if len(nueva) < 4:
+        return jsonify({"error": "La nueva contraseña debe tener al menos 4 caracteres"}), 400
+    actual_hash = hashlib.sha256(actual.encode()).hexdigest()
+    nueva_hash = hashlib.sha256(nueva.encode()).hexdigest()
+    vendedores = read_json("vendedores.json")
+    user = session.get("user")
+    for v in vendedores:
+        if v.get("username") == user:
+            if v.get("password") != actual_hash:
+                return jsonify({"error": "La contraseña actual no es correcta"}), 400
+            v["password"] = nueva_hash
+            write_json("vendedores.json", vendedores)
+            return jsonify({"ok": True})
+    return jsonify({"error": "Usuario no encontrado"}), 404
+
 
 # ──────────────────────────────────────────────────────────────
 # CRUD Vehículos
