@@ -278,6 +278,11 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 .pw-msg { font-size: .8rem; margin-bottom: .7rem; min-height: 1em; }
 .pw-msg.err { color: var(--red-h); }
 .pw-msg.ok { color: var(--green-h); }
+.pw-field { position: relative; }
+.pw-field input { padding-right: 2.5rem; }
+.pw-toggle { position: absolute; right: .6rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--ink-mute); padding: .2rem; cursor: pointer; line-height: 0; }
+.pw-toggle:hover { color: var(--ink); }
+.pw-toggle svg { width: 20px; height: 20px; }
 
 /* ── Menú "Más" móvil ── */
 .more-menu-overlay { display: none; position: fixed; inset: 0; z-index: 55; background: rgba(0,0,0,.5); }
@@ -782,8 +787,37 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       </form>
     </div>
     <div class="modal-foot">
+      <button class="btn btn-outline" id="btnResetPw" style="display:none;margin-right:auto;color:var(--red)" onclick="resetVndPassword()">Restablecer contraseña</button>
       <button class="btn btn-outline" onclick="closeVndModal()">Cancelar</button>
       <button class="btn btn-success" onclick="saveVendedor()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CAMBIO OBLIGATORIO DE CONTRASEÑA -->
+<div class="modal-overlay" id="forcePwOverlay" style="z-index:200">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-head"><h3>Cambiá tu contraseña</h3></div>
+    <div class="modal-body">
+      <p style="font-size:.88rem;color:var(--ink-soft);margin-bottom:1.2rem">Es tu primer ingreso o tu contraseña fue restablecida. Por seguridad, elegí una contraseña nueva.</p>
+      <div class="pw-msg" id="forcePwMsg"></div>
+      <div class="form-group" style="margin-bottom:1rem">
+        <label>Nueva contraseña</label>
+        <div class="pw-field">
+          <input type="password" id="forcePwNew" placeholder="Mínimo 4 caracteres">
+          <button type="button" class="pw-toggle" onclick="togglePwEye(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Repetir contraseña</label>
+        <div class="pw-field">
+          <input type="password" id="forcePwConfirm" placeholder="Repetí la contraseña">
+          <button type="button" class="pw-toggle" onclick="togglePwEye(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-success" onclick="submitForcePassword()" style="width:100%">Guardar contraseña</button>
     </div>
   </div>
 </div>
@@ -1035,6 +1069,12 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       document.getElementById("userRol").textContent=ROL_LABEL[currentUser.rol]||currentUser.rol;
       applyRolePermissions();
       loadAll();
+      if(d.mustChangePassword){
+        document.getElementById("forcePwNew").value="";
+        document.getElementById("forcePwConfirm").value="";
+        document.getElementById("forcePwMsg").textContent="";
+        document.getElementById("forcePwOverlay").classList.add("is-open");
+      }
     }).catch(function(){
       document.getElementById("loginView").style.display="flex";
       document.getElementById("appView").classList.remove("is-active");
@@ -1074,6 +1114,32 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     if(name==="calculadora") runCalc();
     if(name==="inicio") renderInicio();
     if(name==="config") renderConfig();
+  };
+
+  // ── Toggle ojo contraseña ────────────
+  window.togglePwEye=function(btn){
+    var inp=btn.parentElement.querySelector("input");
+    var show=inp.type==="password";
+    inp.type=show?"text":"password";
+    btn.innerHTML=show
+      ?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+      :'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+  };
+
+  // ── Cambio obligatorio de contraseña ──
+  window.submitForcePassword=function(){
+    var pw=document.getElementById("forcePwNew").value;
+    var pw2=document.getElementById("forcePwConfirm").value;
+    var msg=document.getElementById("forcePwMsg");
+    msg.className="pw-msg"; msg.textContent="";
+    if(pw.length<4){msg.className="pw-msg err";msg.textContent="Mínimo 4 caracteres";return;}
+    if(pw!==pw2){msg.className="pw-msg err";msg.textContent="Las contraseñas no coinciden";return;}
+    api("/api/me/password",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({nueva:pw,skipActual:true})})
+      .then(function(){
+        document.getElementById("forcePwOverlay").classList.remove("is-open");
+        toast("Contraseña actualizada correctamente","ok");
+      })
+      .catch(function(e){msg.className="pw-msg err";msg.textContent=e.message;});
   };
 
   // ── Menú "Más" móvil ────────────────
@@ -1491,6 +1557,13 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   window.closeConfirm=function(){document.getElementById("confirmOverlay").classList.remove("is-open");deleteTarget=null;};
   document.getElementById("confirmYes").addEventListener("click",function(){
     if(!deleteTarget)return;
+    if(deleteTarget.type==="resetpw"){
+      api("/api/vendedores/"+pendingResetVid+"/reset-password",{method:"POST"}).then(function(){
+        closeConfirm();toast("Contraseña restablecida a maua2026","ok");
+        document.getElementById("confirmYes").textContent="Eliminar";
+      }).catch(function(e){toast(e.message,"err");closeConfirm();document.getElementById("confirmYes").textContent="Eliminar";});
+      return;
+    }
     var urls={veh:"/api/vehiculos/",vnd:"/api/vendedores/",cli:"/api/clientes/"};
     var url=urls[deleteTarget.type]+encodeURIComponent(deleteTarget.id);
     api(url,{method:"DELETE"}).then(function(){closeConfirm();loadAll();toast("Eliminado");}).catch(function(e){toast(e.message,"err");closeConfirm();});
@@ -1573,10 +1646,24 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     document.getElementById("vndSucursal").value=(isEdit&&v.sucursal)?v.sucursal:document.getElementById("vndSucursal").options[0].value;
     onVndRolChange();
 
+    var resetBtn=document.getElementById("btnResetPw");
+    resetBtn.style.display=(isEdit && currentUser.rol==="admin_general")?"":"none";
+    if(isEdit) resetBtn.setAttribute("data-vid",v.id);
+
     document.getElementById("vndModalOverlay").classList.add("is-open");
   };
   window.closeVndModal=function(){document.getElementById("vndModalOverlay").classList.remove("is-open");};
   window.editVendedor=function(id){var v=vendedores.find(function(x){return x.id===id;}); if(v) openVndModal(v);};
+
+  var pendingResetVid=null;
+  window.resetVndPassword=function(){
+    pendingResetVid=document.getElementById("btnResetPw").getAttribute("data-vid");
+    if(!pendingResetVid) return;
+    document.getElementById("confirmMsg").innerHTML="¿Restablecer la contraseña de este usuario a <strong>maua2026</strong>?";
+    document.getElementById("confirmYes").textContent="Restablecer";
+    deleteTarget={type:"resetpw"};
+    document.getElementById("confirmOverlay").classList.add("is-open");
+  };
 
   window.saveVendedor=function(){
     var form=document.getElementById("vndForm");

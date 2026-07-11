@@ -116,35 +116,60 @@ def api_logout():
     session.clear()
     return jsonify({"ok": True})
 
+DEFAULT_PW_HASH = hashlib.sha256("maua2026".encode()).hexdigest()
+
 @app.route("/api/me")
 def api_me():
     if session.get("user"):
+        vendedores = read_json("vendedores.json")
+        must_change = False
+        for v in vendedores:
+            if v.get("username") == session["user"]:
+                must_change = v.get("password") == DEFAULT_PW_HASH
+                break
         return jsonify({"user": session["user"], "nombre": session.get("nombre", ""),
                         "rol": session.get("rol", "admin_general"),
-                        "sucursal": session.get("sucursal", "")})
+                        "sucursal": session.get("sucursal", ""),
+                        "mustChangePassword": must_change})
     return jsonify({"user": None}), 401
 
 @app.route("/api/me/password", methods=["POST"])
 @login_required
 def api_me_password():
-    """Cambio de contraseña de la propia cuenta (cualquier usuario logueado)."""
     body = request.get_json(silent=True) or {}
     actual = body.get("actual", "")
     nueva = body.get("nueva", "")
+    skip_actual = body.get("skipActual", False)
     if len(nueva) < 4:
         return jsonify({"error": "La nueva contraseña debe tener al menos 4 caracteres"}), 400
-    actual_hash = hashlib.sha256(actual.encode()).hexdigest()
     nueva_hash = hashlib.sha256(nueva.encode()).hexdigest()
     vendedores = read_json("vendedores.json")
     user = session.get("user")
     for v in vendedores:
         if v.get("username") == user:
-            if v.get("password") != actual_hash:
-                return jsonify({"error": "La contraseña actual no es correcta"}), 400
+            if skip_actual and v.get("password") == DEFAULT_PW_HASH:
+                pass
+            else:
+                actual_hash = hashlib.sha256(actual.encode()).hexdigest()
+                if v.get("password") != actual_hash:
+                    return jsonify({"error": "La contraseña actual no es correcta"}), 400
             v["password"] = nueva_hash
             write_json("vendedores.json", vendedores)
             return jsonify({"ok": True})
     return jsonify({"error": "Usuario no encontrado"}), 404
+
+@app.route("/api/vendedores/<vid>/reset-password", methods=["POST"])
+@login_required
+def api_reset_password(vid):
+    if session.get("rol") != "admin_general":
+        return jsonify({"error": "Solo el administrador general puede restablecer contraseñas"}), 403
+    vendedores = read_json("vendedores.json")
+    for v in vendedores:
+        if v.get("id") == vid:
+            v["password"] = DEFAULT_PW_HASH
+            write_json("vendedores.json", vendedores)
+            return jsonify({"ok": True})
+    return jsonify({"error": "Vendedor no encontrado"}), 404
 
 
 # ──────────────────────────────────────────────────────────────
