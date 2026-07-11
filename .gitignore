@@ -3,8 +3,9 @@ __pycache__/
 .DS_Store
 __test_link.html
 
-# Datos con información personal de clientes: no se versionan ni se suben al deploy.
-# El panel los crea/actualiza localmente en tiempo de ejecución.
+# Datos del panel: no se versionan. El servidor los crea en tiempo de ejecución.
 data/clientes.json
 data/ventas.json
 data/financiaciones.json
+data/vendedores.json
+data/vehiculos.json
