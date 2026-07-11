@@ -130,7 +130,7 @@
     "marca": "Volkswagen",
     "modelo": "Saveiro Cross",
     "version": "1.6 Doble Cabina",
-    "condicion": "usado",
+    "condicion": "vendido",
     "carroceria": "Pickup",
     "anio": 2018,
     "km": 74000,
@@ -151,7 +151,8 @@
       "assets/img/vehiculos/saveiro-cross-18-7.webp"
     ],
     "etiqueta": "Usado",
-    "publicado": true
+    "publicado": false,
+    "ventaId": "vta-e24006ae"
   },
   {
     "id": "v-onix-2015",
@@ -186,7 +187,7 @@
     "marca": "Volkswagen",
     "modelo": "Saveiro",
     "version": "1.6 Cabina Extendida",
-    "condicion": "usado",
+    "condicion": "vendido",
     "carroceria": "Pickup",
     "anio": 2014,
     "km": 112000,
@@ -203,14 +204,16 @@
       "assets/img/vehiculos/saveiro-2014-3.webp",
       "assets/img/vehiculos/saveiro-2014-4.webp"
     ],
-    "etiqueta": "Usado"
+    "etiqueta": "Usado",
+    "publicado": false,
+    "ventaId": "vta-1e0e6abb"
   },
   {
     "id": "v-saveiro-g5",
     "marca": "Volkswagen",
     "modelo": "Saveiro G5",
     "version": "1.6 Cabina Extendida",
-    "condicion": "usado",
+    "condicion": "vendido",
     "carroceria": "Pickup",
     "anio": 2011,
     "km": 148000,
@@ -229,14 +232,58 @@
       "assets/img/vehiculos/saveiro-g5-5.webp",
       "assets/img/vehiculos/saveiro-g5-6.webp"
     ],
-    "etiqueta": "Usado"
+    "etiqueta": "Usado",
+    "publicado": false,
+    "historial": [
+      {
+        "usuario": "Administrador",
+        "fecha": "2026-07-09 18:25",
+        "cambios": [
+          {
+            "campo": "Publicado",
+            "antes": "No",
+            "despues": "No"
+          }
+        ]
+      },
+      {
+        "usuario": "Administrador",
+        "fecha": "2026-07-09 18:28",
+        "cambios": [
+          {
+            "campo": "Publicado",
+            "antes": "No",
+            "despues": "Sí"
+          }
+        ]
+      },
+      {
+        "usuario": "Administrador",
+        "fecha": "2026-07-09 21:44",
+        "cambios": [
+          {
+            "campo": "Precio de costo",
+            "antes": "None",
+            "despues": "5000"
+          },
+          {
+            "campo": "Cuotas de (web)",
+            "antes": "None",
+            "despues": "0"
+          }
+        ]
+      }
+    ],
+    "costo": 5000,
+    "cuota": 0,
+    "ventaId": "vta-f07393f0"
   },
   {
     "id": "v-gol-g6",
     "marca": "Volkswagen",
     "modelo": "Gol G6",
     "version": "1.6 Sedan Power",
-    "condicion": "usado",
+    "condicion": "vendido",
     "carroceria": "Hatch",
     "anio": 2015,
     "km": 94000,
@@ -253,14 +300,16 @@
       "assets/img/vehiculos/gol-g6-3.webp",
       "assets/img/vehiculos/gol-g6-4.webp"
     ],
-    "etiqueta": "Usado"
+    "etiqueta": "Usado",
+    "ventaId": "vta-8964d6fc",
+    "publicado": false
   },
   {
     "id": "v-saveiro-cross-16",
     "marca": "Volkswagen",
     "modelo": "Saveiro Cross",
     "version": "1.6 Doble Cabina",
-    "condicion": "usado",
+    "condicion": "vendido",
     "carroceria": "Pickup",
     "anio": 2016,
     "km": 91000,
@@ -277,14 +326,16 @@
       "assets/img/vehiculos/saveiro-cross-16-3.webp",
       "assets/img/vehiculos/saveiro-cross-16-4.webp"
     ],
-    "etiqueta": "Usado"
+    "etiqueta": "Usado",
+    "publicado": false,
+    "ventaId": "vta-90f85a44"
   },
   {
     "id": "v-fiat-uno",
     "marca": "Fiat",
     "modelo": "Uno",
     "version": "1.0",
-    "condicion": "usado",
+    "condicion": "vendido",
     "carroceria": "Hatch",
     "anio": 1994,
     "km": 178000,
@@ -303,14 +354,16 @@
       "assets/img/vehiculos/fiat-uno-1994-5.webp",
       "assets/img/vehiculos/fiat-uno-1994-6.webp"
     ],
-    "etiqueta": "Usado"
+    "etiqueta": "Usado",
+    "publicado": false,
+    "ventaId": "vta-b9d9c774"
   },
   {
     "id": "v-jac-j2",
     "marca": "JAC",
     "modelo": "J2",
     "version": "1.0",
-    "condicion": "usado",
+    "condicion": "vendido",
     "carroceria": "Hatch",
     "anio": 2014,
     "km": 103000,
@@ -329,6 +382,8 @@
       "assets/img/vehiculos/jac-j2-5.webp",
       "assets/img/vehiculos/jac-j2-6.webp"
     ],
-    "etiqueta": "Usado"
+    "etiqueta": "Usado",
+    "ventaId": "vta-c997e835",
+    "publicado": false
   }
 ]

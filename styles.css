@@ -384,6 +384,8 @@ ul { list-style: none; padding: 0; }
 .veh-specs li { font-size: .76rem; color: var(--ink-soft); background: rgba(255,255,255,.04); border: 1px solid var(--line); padding: .26rem .55rem; border-radius: 999px; }
 .veh-foot { display: flex; align-items: center; justify-content: space-between; gap: .6rem; margin-top: 1.2rem; padding-top: 1rem; border-top: 1px solid var(--line); }
 .veh-price { font-family: var(--font-display); font-weight: 700; font-size: 1rem; color: var(--ink); white-space: nowrap; }
+.veh-price-lbl { display: block; font-family: var(--font-body, inherit); font-weight: 500; font-size: .62rem; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-soft, #888); line-height: 1; margin-bottom: .15rem; }
+.pdp-price .veh-price-lbl { font-size: .8rem; margin-bottom: .3rem; }
 
 /* Filtros */
 .filtros { display: flex; flex-wrap: wrap; gap: .55rem; margin-bottom: 1.8rem; }

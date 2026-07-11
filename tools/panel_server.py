@@ -151,7 +151,9 @@ def api_vehiculos_create():
         "carroceria": body.get("carroceria", "Hatch"),
         "anio": int(body.get("anio", datetime.now().year)),
         "km": int(body.get("km", 0)),
+        "costo": int(body.get("costo", 0)),
         "precio": int(body.get("precio", 0)),
+        "cuota": int(body.get("cuota", 0)),
         "tipoMotor": body.get("tipoMotor", "Nafta"),
         "transmision": body.get("transmision", "Manual"),
         "traccion": body.get("traccion", "Delantera"),
@@ -176,7 +178,7 @@ CAMPO_LABEL = {
     "condicion": "Condición", "etiqueta": "Etiqueta", "carroceria": "Carrocería",
     "tipoMotor": "Combustible", "transmision": "Transmisión", "traccion": "Tracción",
     "ubicacion": "Sucursal", "fechaIngreso": "Fecha de ingreso",
-    "anio": "Año", "km": "Kilómetros", "precio": "Precio",
+    "anio": "Año", "km": "Kilómetros", "costo": "Precio de costo", "precio": "Precio", "cuota": "Cuotas de (web)",
     "primerDueno": "Primer dueño", "publicado": "Publicado",
 }
 
@@ -206,7 +208,7 @@ def api_vehiculos_update(vid):
                         "tipoMotor", "transmision", "traccion", "ubicacion", "fechaIngreso"]:
                 if key in body:
                     registrar(key, body[key].strip() if isinstance(body[key], str) else body[key])
-            for key in ["anio", "km", "precio"]:
+            for key in ["anio", "km", "costo", "precio", "cuota"]:
                 if key in body:
                     registrar(key, int(body[key]))
             if "primerDueno" in body:
@@ -540,6 +542,7 @@ def api_ventas_create():
                 "numero": i + 1, "vencimiento": venc, "valor": valor_cuota,
                 "pagada": False, "fechaPago": None, "metodoPago": None,
             })
+        tasa_interes = float(body.get("tasaInteres", 0) or 0)
         financiaciones = read_json("financiaciones.json")
         financiacion_id = "fin-" + uuid.uuid4().hex[:8]
         financiaciones.append({
@@ -552,6 +555,7 @@ def api_ventas_create():
             "montoTotal": monto_financiado,
             "cantidadCuotas": cant_cuotas,
             "valorCuota": valor_cuota,
+            "tasaInteres": tasa_interes,
             "cuotas": cuotas,
         })
         write_json("financiaciones.json", financiaciones)
@@ -618,9 +622,34 @@ def api_financiaciones_pagar(fid):
             pendiente = next((c for c in f["cuotas"] if not c["pagada"]), None)
             if not pendiente:
                 return jsonify({"error": "No hay cuotas pendientes"}), 400
+            # El frontend calcula el monto a cobrar según la tasa de interés
+            # aplicada al momento del cobro y lo envía ya resuelto. Si no viene
+            # (compatibilidad), se cobra el valor original de la cuota.
+            # La cuota cargada ya incluye el interés a la tasa pactada (1,5% por
+            # defecto): revertimos la fórmula francesa para obtener el capital
+            # implícito y así medir el interés efectivamente cobrado.
+            n = f.get("cantidadCuotas") or 1
+            base = f.get("tasaInteres")
+            base = 1.5 if base is None else float(base)
+            if base > 0:
+                r = base / 100.0
+                factor = (1 - (1 + r) ** -n) / r
+                capital_cuota = (pendiente["valor"] * factor) / n
+            else:
+                capital_cuota = pendiente["valor"]
+            monto_cobrado = body.get("montoCobrado")
+            if monto_cobrado is None:
+                monto_cobrado = pendiente["valor"]
+            monto_cobrado = max(0.0, float(monto_cobrado))
+            tasa_aplicada = body.get("tasaAplicada")
             pendiente["pagada"] = True
             pendiente["fechaPago"] = body.get("fecha", datetime.now().strftime("%Y-%m-%d"))
             pendiente["metodoPago"] = metodo
+            pendiente["montoCobrado"] = round(monto_cobrado)
+            if tasa_aplicada is not None:
+                pendiente["tasaAplicada"] = float(tasa_aplicada)
+            # Interés cobrado por encima del capital de la cuota (para reportes).
+            pendiente["interesCobrado"] = round(max(0.0, monto_cobrado - capital_cuota))
             # Sucursal donde se cobró (el cliente puede pagar en cualquiera).
             # Sirve para atribuir el ingreso al admin de esa sucursal.
             pendiente["sucursalCobro"] = session.get("sucursal", "")
@@ -643,7 +672,7 @@ def public_vehiculos():
     for v in vehiculos:
         if not v.get("publicado", True):
             continue
-        oculto = ("precio", "km", "creadoPor", "creadoEn", "historial")
+        oculto = ("costo", "precio", "km", "creadoPor", "creadoEn", "historial")
         publicados.append({k: val for k, val in v.items() if k not in oculto})
     return jsonify(publicados)
 

@@ -18,6 +18,13 @@
   /* ---- Formato de números para UI (es-UY) ---- */
   function fmtNum(n) { return Number(n || 0).toLocaleString("es-UY"); }
   function fmtPrecio(n) { return n > 0 ? ("US$ " + fmtNum(n)) : "Consultar"; }
+  /* Precio que se muestra en el sitio: la cuota mensual en pesos que fija la
+     automotora. Si no se cargó, se muestra "Consultar". */
+  function cuotaWebHTML(v) {
+    return (v.cuota && v.cuota > 0)
+      ? '<span class="veh-price-lbl">Cuotas de</span> $ ' + fmtNum(v.cuota)
+      : 'Consultar';
+  }
   function clamp(n, lo, hi) { return Math.min(hi, Math.max(lo, n)); }
   function floorTo(n, step) { return Math.floor(n / step) * step; }
   function ceilTo(n, step) { return Math.ceil(n / step) * step; }
@@ -74,7 +81,7 @@
       +     '<h3 class="veh-name">' + escHTML(v.marca) + ' ' + escHTML(v.modelo) + '</h3>'
       +     '<ul class="veh-specs"><li>' + escHTML(v.transmision) + '</li><li>' + escHTML(v.tipoMotor) + '</li></ul>'
       +     '<div class="veh-foot">'
-      +       '<span class="veh-price">A consultar</span>'
+      +       '<span class="veh-price">' + cuotaWebHTML(v) + '</span>'
       +       '<a class="btn btn-small btn-wa" data-wa href="' + vehWaHref(v) + '" target="_blank" rel="noopener">WhatsApp</a>'
       +     '</div>'
       +   '</div>'
@@ -865,7 +872,7 @@
     var marcaEl = $("[data-pdp-marca]"); if (marcaEl) marcaEl.textContent = v.marca;
     var titleEl = $("[data-pdp-title]"); if (titleEl) titleEl.textContent = v.marca + " " + v.modelo;
     var versionEl = $("[data-pdp-version]"); if (versionEl) versionEl.textContent = v.version || "";
-    var priceEl = $("[data-pdp-price]"); if (priceEl) priceEl.textContent = "Consultar";
+    var priceEl = $("[data-pdp-price]"); if (priceEl) priceEl.innerHTML = cuotaWebHTML(v);
 
     var quickEl = $("[data-pdp-quickspecs]");
     if (quickEl) {
