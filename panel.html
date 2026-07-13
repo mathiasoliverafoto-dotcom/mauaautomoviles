@@ -2185,7 +2185,9 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     wrap.style.display="";
     if(tipo==="sucursal"){
       lbl.textContent="Sucursal";
-      sel.innerHTML='<option value="">Todas</option><option>Florencio Sánchez 650, Melo</option><option>Bvar. Francisco Mata 524, Melo</option><option>Blvr. Aparicio Saravia, Río Branco</option>';
+      var sucs=[];
+      vendedores.forEach(function(v){ if(v.sucursal && sucs.indexOf(v.sucursal)===-1) sucs.push(v.sucursal); });
+      sel.innerHTML='<option value="">Todas</option>'+sucs.map(function(s){return '<option>'+esc(s)+'</option>';}).join("");
     } else {
       lbl.textContent="Vendedor";
       sel.innerHTML='<option value="">Todos</option>'+vendedores.map(function(v){return '<option value="'+v.id+'">'+esc(v.nombre)+'</option>';}).join("");
@@ -2219,34 +2221,48 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 
     var cuotasPagas=cobrosCuotas();
 
+    // admin_sucursal: ocultar filtro sucursal y pre-filtrar por su sucursal
+    var esSuc=currentUser.rol==="admin_sucursal";
+    var miSuc=currentUser.sucursal||"";
+    var finFiltrarPor=document.getElementById("finFiltrarPor");
+    var optSuc=finFiltrarPor.querySelector('option[value="sucursal"]');
+    if(optSuc) optSuc.style.display=esSuc?"none":"";
+    if(esSuc && finFiltrarPor.value==="sucursal"){ finFiltrarPor.value=""; onFiltrarPorChange(); }
+    var finVentas=ventas, finCuotas=cuotasPagas;
+    if(esSuc){
+      var misSucs=miSuc.split(",").map(function(s){return s.trim();});
+      finVentas=ventas.filter(function(v){ return misSucs.indexOf(v.sucursal)!==-1; });
+      finCuotas=cuotasPagas.filter(function(c){ return misSucs.indexOf(c.sucursal)!==-1; });
+    }
+
     // Stats globales (caja real: monto inicial de ventas + cuotas cobradas, sin filtros)
     var todayStr=today();
     var curMonth=todayStr.slice(0,7);
     var wa=new Date();wa.setDate(wa.getDate()-7);var wStr=wa.toISOString().slice(0,10);
-    function ingresoDia(f){return sumNeto(ventas.filter(function(v){return v.fecha===f;}))+sumMonto(cuotasPagas.filter(function(c){return c.fecha===f;}));}
-    function ingresoDesde(f){return sumNeto(ventas.filter(function(v){return v.fecha>=f;}))+sumMonto(cuotasPagas.filter(function(c){return c.fecha>=f;}));}
-    function ingresoMes(m){return sumNeto(ventas.filter(function(v){return v.fecha.slice(0,7)===m;}))+sumMonto(cuotasPagas.filter(function(c){return c.fecha.slice(0,7)===m;}));}
+    function ingresoDia(f){return sumNeto(finVentas.filter(function(v){return v.fecha===f;}))+sumMonto(finCuotas.filter(function(c){return c.fecha===f;}));}
+    function ingresoDesde(f){return sumNeto(finVentas.filter(function(v){return v.fecha>=f;}))+sumMonto(finCuotas.filter(function(c){return c.fecha>=f;}));}
+    function ingresoMes(m){return sumNeto(finVentas.filter(function(v){return v.fecha.slice(0,7)===m;}))+sumMonto(finCuotas.filter(function(c){return c.fecha.slice(0,7)===m;}));}
     document.getElementById("finStatsGlobal").innerHTML=
       statC("US$ "+fmtN(ingresoDia(todayStr)),"Hoy")+
       statC("US$ "+fmtN(ingresoDesde(wStr)),"Semana")+
       statC("US$ "+fmtN(ingresoMes(curMonth)),"Mes actual")+
-      statC(ventas.length,"Ventas totales");
+      statC(finVentas.length,"Ventas totales");
 
     // Filtro temporal
     var temporalVentas, temporalCuotas;
     if(finPeriod==="dia"){
-      temporalVentas=ventas.filter(function(v){return v.fecha===todayStr;});
-      temporalCuotas=cuotasPagas.filter(function(c){return c.fecha===todayStr;});
+      temporalVentas=finVentas.filter(function(v){return v.fecha===todayStr;});
+      temporalCuotas=finCuotas.filter(function(c){return c.fecha===todayStr;});
     } else if(finPeriod==="semana"){
-      temporalVentas=ventas.filter(function(v){return v.fecha>=wStr;});
-      temporalCuotas=cuotasPagas.filter(function(c){return c.fecha>=wStr;});
+      temporalVentas=finVentas.filter(function(v){return v.fecha>=wStr;});
+      temporalCuotas=finCuotas.filter(function(c){return c.fecha>=wStr;});
     } else if(finPeriod==="mes"){
       var mesVal=document.getElementById("finMes").value;
-      temporalVentas=ventas.filter(function(v){return v.fecha.slice(0,7)===mesVal;});
-      temporalCuotas=cuotasPagas.filter(function(c){return c.fecha.slice(0,7)===mesVal;});
+      temporalVentas=finVentas.filter(function(v){return v.fecha.slice(0,7)===mesVal;});
+      temporalCuotas=finCuotas.filter(function(c){return c.fecha.slice(0,7)===mesVal;});
     } else {
-      temporalVentas=ventas.slice();
-      temporalCuotas=cuotasPagas.slice();
+      temporalVentas=finVentas.slice();
+      temporalCuotas=finCuotas.slice();
     }
 
     // Filtro por sucursal O vendedor
