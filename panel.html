@@ -7,7 +7,7 @@
 <link rel="icon" href="assets/img/logo-mark.svg">
 <script>
 /* Aplica el tema guardado (oscuro/claro/automático) antes de pintar, para que no haya parpadeo. */
-(function(){try{document.documentElement.setAttribute("data-theme",localStorage.getItem("mauaTheme")||"dark");}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();
+(function(){try{var t=localStorage.getItem("mauaTheme")||"auto";document.documentElement.setAttribute("data-theme",t==="auto"?(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light"):t);}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();
 </script>
 <style>
 :root {
@@ -1157,7 +1157,8 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   // ── Configuración ───────────────────
   window.setTheme=function(t){
     try{ localStorage.setItem("mauaTheme",t); }catch(e){}
-    document.documentElement.setAttribute("data-theme",t);
+    var applied = t==="auto"?(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light"):t;
+    document.documentElement.setAttribute("data-theme",applied);
     document.querySelectorAll("[data-theme-opt]").forEach(function(b){
       b.classList.toggle("is-active",b.dataset.themeOpt===t);
     });
@@ -1170,7 +1171,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       item("Rol", ROL_LABEL[currentUser.rol]||currentUser.rol)+
       item("Sucursal", (currentUser.sucursal||"").split(",")[0]||"Todas");
     var t=("dark");
-    try{ t=localStorage.getItem("mauaTheme")||"dark"; }catch(e){}
+    try{ t=localStorage.getItem("mauaTheme")||"auto"; }catch(e){}
     document.querySelectorAll("[data-theme-opt]").forEach(function(b){
       b.classList.toggle("is-active",b.dataset.themeOpt===t);
     });
