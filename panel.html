@@ -206,6 +206,12 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 
 /* ── Personal cards ────────────────────── */
 .personal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+.personal-grid.is-list { grid-template-columns: 1fr; }
+.personal-grid.is-list .personal-card { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.personal-grid.is-list .pc-name { min-width: 180px; }
+.personal-grid.is-list .pc-actions { margin-left: auto; margin-top: 0; }
+.personalViewBtn { background: none !important; border: none !important; color: var(--ink-mute); padding: .3rem .5rem !important; min-height: 0 !important; }
+.personalViewBtn.is-active { background: var(--bg-2) !important; color: var(--ink); border-radius: 6px; }
 .personal-card { background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.2rem; }
 .personal-card .pc-name { font-weight: 700; font-size: 1rem; margin-bottom: .3rem; }
 .personal-card .pc-detail { color: var(--ink-soft); font-size: .82rem; display: flex; align-items: center; gap: .4rem; margin-top: .3rem; }
@@ -584,6 +590,22 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       <div class="main-header">
         <h2>Personal / Vendedores</h2>
         <button class="btn btn-primary" onclick="openVndModal()">+ Nuevo vendedor</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;margin-bottom:1rem">
+        <div class="form-group" style="margin:0;min-width:0">
+          <select id="personalOrden" onchange="renderPersonal()" style="padding:.4rem .6rem;font-size:.82rem">
+            <option value="nombre">Ordenar por nombre</option>
+            <option value="rol">Ordenar por rol</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:2px;background:var(--bg-3);border-radius:8px;padding:2px">
+          <button class="btn btn-sm personalViewBtn is-active" data-pview="grid" onclick="setPersonalView('grid')" title="Cuadrícula">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          </button>
+          <button class="btn btn-sm personalViewBtn" data-pview="list" onclick="setPersonalView('list')" title="Lista">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+        </div>
       </div>
       <div id="personalGrid" class="personal-grid"></div>
     </div>
@@ -1613,8 +1635,24 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   window.removeFoto=function(i){editFotos.splice(i,1);renderFotoPreview();};
 
   // ── Personal / Vendedores ───────────
+  var personalView="grid";
+  window.setPersonalView=function(v){
+    personalView=v;
+    document.querySelectorAll(".personalViewBtn").forEach(function(b){b.classList.toggle("is-active",b.dataset.pview===v);});
+    var grid=document.getElementById("personalGrid");
+    grid.classList.toggle("is-list",v==="list");
+  };
   function renderPersonal(){
-    document.getElementById("personalGrid").innerHTML=vendedores.map(function(v){
+    var orden=document.getElementById("personalOrden").value;
+    var ROL_ORDER={admin_general:0,admin_sucursal:1,vendedor:2,lavadero:3};
+    var sorted=vendedores.slice().sort(function(a,b){
+      if(orden==="rol"){
+        var ra=(ROL_ORDER[a.rol]!=null?ROL_ORDER[a.rol]:9), rb=(ROL_ORDER[b.rol]!=null?ROL_ORDER[b.rol]:9);
+        if(ra!==rb) return ra-rb;
+      }
+      return (a.nombre||"").localeCompare(b.nombre||"");
+    });
+    document.getElementById("personalGrid").innerHTML=sorted.map(function(v){
       var comTxt=(!v.comision||v.comision.valor===0)?"Sin comisión":(v.comision.tipo==="porcentaje"?(v.comision.valor+"%"):("US$ "+fmtN(v.comision.valor)+" fijo"));
       var accesoTxt=v.username?('🔑 '+esc(v.username)+' · '+esc(ROL_LABEL[v.rol]||v.rol)+(v.sucursal?(' · '+esc(v.sucursal.split(",")[0])):'')):'<span style="color:var(--amber)">⚠ Falta el acceso — editá para completarlo</span>';
       return '<div class="personal-card">'+
