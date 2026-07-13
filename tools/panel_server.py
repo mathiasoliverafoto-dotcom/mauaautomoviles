@@ -338,7 +338,7 @@ def api_upload():
 # persona (ej. el administrador) terminaba duplicada en dos listas.
 # ──────────────────────────────────────────────────────────────
 
-ROLES_VALIDOS = {"admin_general", "admin_sucursal", "vendedor"}
+ROLES_VALIDOS = {"admin_general", "admin_sucursal", "vendedor", "lavadero"}
 
 def _vendedor_publico(v, full=False):
     out = {
@@ -737,17 +737,13 @@ def static_files(path):
 # Main
 # ──────────────────────────────────────────────────────────────
 
-if __name__ == "__main__":
+def _init_data():
     os.makedirs(DATA, exist_ok=True)
     os.makedirs(UPLOAD, exist_ok=True)
 
     if not os.path.exists(data_path("vendedores.json")):
         write_json("vendedores.json", [])
 
-    # Migración: si existe un usuarios.json (login) viejo, se fusiona
-    # dentro de vendedores.json (Personal) para no tener a la misma
-    # persona duplicada en dos listas separadas. Se hace una sola vez:
-    # si ya hay algún vendedor con "username" cargado, no se repite.
     _vendedores = read_json("vendedores.json")
     if os.path.exists(data_path("usuarios.json")) and not any(v.get("username") for v in _vendedores):
         _usuarios_viejos = read_json("usuarios.json")
@@ -774,8 +770,6 @@ if __name__ == "__main__":
             write_json("vendedores.json", _vendedores)
             print("  → Usuarios de login fusionados dentro de Personal")
 
-    # Si nadie con rol administrador general tiene acceso, se crea uno
-    # por defecto (instalación nueva o vendedores.json vacío).
     _vendedores = read_json("vendedores.json")
     if not any(v.get("rol") == "admin_general" and v.get("username") for v in _vendedores):
         pw = hashlib.sha256("maua2026".encode()).hexdigest()
@@ -797,6 +791,9 @@ if __name__ == "__main__":
     if not os.path.exists(data_path("financiaciones.json")):
         write_json("financiaciones.json", [])
 
+_init_data()
+
+if __name__ == "__main__":
     print(f"\n  🚗  Mauá Automóviles — Panel activo")
     print(f"  →  Sitio:  http://localhost:8765")
     print(f"  →  Panel:  http://localhost:8765/panel")
