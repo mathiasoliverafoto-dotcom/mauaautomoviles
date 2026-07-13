@@ -539,7 +539,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
           <button class="btn-icon" id="btnViewList" title="Vista lista" onclick="setView('list')">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
           </button>
-          <button class="btn btn-primary" onclick="openVehModal()">+ Nuevo vehículo</button>
+          <button class="btn btn-primary" id="btnNewVeh" onclick="openVehModal()">+ Nuevo vehículo</button>
         </div>
       </div>
       <div class="veh-filters" id="vehFilters">
@@ -772,6 +772,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
                 <option value="admin_general">Administrador general</option>
                 <option value="admin_sucursal">Administrador de sucursal</option>
                 <option value="vendedor">Vendedor</option>
+                <option value="lavadero">Lavadero</option>
               </select>
             </div>
             <div class="form-group" id="vndSucursalGroup"><label>Sucursal asignada</label>
@@ -782,7 +783,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
               </select>
             </div>
           </div>
-          <p style="font-size:.78rem;color:var(--ink-mute)">El administrador general ve todo. El de sucursal no ve Personal y sus finanzas quedan acotadas a su sucursal. El vendedor solo carga y vende vehículos.</p>
+          <p style="font-size:.78rem;color:var(--ink-mute)">El administrador general ve todo. El de sucursal no ve Personal y sus finanzas quedan acotadas a su sucursal. El vendedor carga y vende vehículos. El lavadero solo consulta el stock de vehículos.</p>
         </div>
       </form>
     </div>
@@ -963,12 +964,13 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   var cliModalContext = null;
   var currentUser = { rol: "admin_general", sucursal: "" };
   var PERMS = {
-    admin_general:  { inicio:1, calculadora:1, vehiculos:1, clientes:1, personal:1, cobranzas:1, finanzas:1, config:1, borrarVeh:1 },
-    admin_sucursal: { inicio:1, calculadora:1, vehiculos:1, clientes:1, cobranzas:1, finanzas:1, config:1, borrarVeh:1 },
-    vendedor:       { calculadora:1, vehiculos:1, clientes:1, config:1 }
+    admin_general:  { inicio:1, calculadora:1, vehiculos:1, clientes:1, personal:1, cobranzas:1, finanzas:1, config:1, borrarVeh:1, editarVeh:1 },
+    admin_sucursal: { inicio:1, calculadora:1, vehiculos:1, clientes:1, cobranzas:1, finanzas:1, config:1, borrarVeh:1, editarVeh:1 },
+    vendedor:       { calculadora:1, vehiculos:1, clientes:1, config:1, editarVeh:1 },
+    lavadero:       { vehiculos:1, config:1 }
   };
   function can(x){ return !!(PERMS[currentUser.rol]||PERMS.vendedor)[x]; }
-  var ROL_LABEL = { admin_general:"Administrador general", admin_sucursal:"Administrador de sucursal", vendedor:"Vendedor" };
+  var ROL_LABEL = { admin_general:"Administrador general", admin_sucursal:"Administrador de sucursal", vendedor:"Vendedor", lavadero:"Lavadero" };
 
   // ── Helpers ─────────────────────────
   function esc(s) { return String(s==null?"":s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];}); }
@@ -1085,10 +1087,14 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     document.querySelectorAll("[data-nav]").forEach(function(b){
       b.style.display=can(b.dataset.nav)?"":"none";
     });
-    // Landing por rol: los admins arrancan en Inicio; el vendedor en Calculadora.
+    document.querySelectorAll("[data-morenav]").forEach(function(b){
+      b.style.display=can(b.dataset.morenav)?"":"none";
+    });
+    var btnNew=document.getElementById("btnNewVeh");
+    if(btnNew) btnNew.style.display=can("editarVeh")?"":"none";
     var active=document.querySelector(".section.is-active");
     var activeName=active?active.id.replace("sec","").toLowerCase():"";
-    if(!activeName || !can(activeName)) switchSection(can("inicio")?"inicio":"calculadora");
+    if(!activeName || !can(activeName)) switchSection(can("inicio")?"inicio":"vehiculos");
   }
   document.getElementById("loginForm").addEventListener("submit",function(e){
     e.preventDefault();
@@ -1335,7 +1341,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
         '<div class="card-sub">'+esc(v.carroceria)+' · '+v.anio+' · '+vehKm(v)+'</div>'+
         '<div class="card-price">'+fmtP(v.precio)+'</div></div>'+
         '<div class="card-actions">'+
-        (isSold?'':
+        (isSold||!can("editarVeh")?'':
           '<button class="btn btn-outline btn-sm" onclick="editVehiculo(\''+v.id+'\')">Editar</button>'+
           '<button class="btn btn-outline btn-sm" onclick="togglePub(\''+v.id+'\')">'+(v.publicado!==false?"Ocultar":"Publicar")+'</button>'+
           '<button class="btn btn-amber btn-sm" onclick="openVentaModal(\''+v.id+'\')">Vender</button>'+
@@ -1355,7 +1361,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
         '<div class="veh-list-price">'+fmtP(v.precio)+'</div>'+
         '<div class="veh-list-status">'+vehStatus(v)+'</div>'+
         '<div class="veh-list-actions">'+
-        (isSold?'':
+        (isSold||!can("editarVeh")?'':
           '<button class="btn btn-outline btn-sm" onclick="editVehiculo(\''+v.id+'\')">Editar</button>'+
           '<button class="btn btn-amber btn-sm" onclick="openVentaModal(\''+v.id+'\')">Vender</button>'+
           (can("borrarVeh")?'<button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="confirmDelete(\''+v.id+'\')">×</button>':'')
