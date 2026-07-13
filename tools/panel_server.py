@@ -656,7 +656,13 @@ def api_ventas_create():
 @app.route("/api/financiaciones", methods=["GET"])
 @require_roles("admin_general", "admin_sucursal")
 def api_financiaciones_list():
-    return jsonify(read_json("financiaciones.json"))
+    fins = read_json("financiaciones.json")
+    if session.get("rol") == "admin_sucursal":
+        suc = session.get("sucursal", "")
+        ventas = read_json("ventas.json")
+        ids_suc = {v["id"] for v in ventas if v.get("sucursal", "") == suc}
+        fins = [f for f in fins if f.get("ventaId", "") in ids_suc]
+    return jsonify(fins)
 
 @app.route("/api/financiaciones/<fid>/pagar", methods=["POST"])
 @require_roles("admin_general", "admin_sucursal")
