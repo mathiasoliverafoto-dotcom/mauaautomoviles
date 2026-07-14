@@ -209,19 +209,6 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 .foto-rm { position: absolute; top: 2px; right: 2px; width: 20px; height: 20px; background: rgba(0,0,0,.7); color: #fff; border: none; border-radius: 50%; font-size: .7rem; display: flex; align-items: center; justify-content: center; }
 .foto-rm:hover { background: var(--red); }
 
-/* ── Personal cards ────────────────────── */
-.personal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
-.personal-grid.is-list { grid-template-columns: 1fr; }
-.personal-grid.is-list .personal-card { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
-.personal-grid.is-list .pc-name { min-width: 180px; }
-.personal-grid.is-list .pc-actions { margin-left: auto; margin-top: 0; }
-.personalViewBtn { background: none !important; border: none !important; color: var(--ink-mute); padding: .3rem .5rem !important; min-height: 0 !important; }
-.personalViewBtn.is-active { background: var(--bg-2) !important; color: var(--ink); border-radius: 6px; }
-.personal-card { background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.2rem; }
-.personal-card .pc-name { font-weight: 700; font-size: 1rem; margin-bottom: .3rem; }
-.personal-card .pc-detail { color: var(--ink-soft); font-size: .82rem; display: flex; align-items: center; gap: .4rem; margin-top: .3rem; }
-.personal-card .pc-comision { margin-top: .6rem; padding: .4rem .7rem; background: var(--bg-3); border-radius: 6px; font-size: .8rem; display: inline-block; }
-.personal-card .pc-actions { display: flex; gap: .4rem; margin-top: .8rem; }
 
 /* ── Cliente búsqueda en venta ─────────── */
 .cliente-dropdown { display: none; position: absolute; top: 100%; left: 0; right: 0; z-index: 20; background: var(--bg-3); border: 1px solid var(--line-2); border-radius: 8px; margin-top: 4px; max-height: 220px; overflow-y: auto; box-shadow: 0 8px 24px rgba(0,0,0,.35); }
@@ -231,6 +218,14 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 .cliente-dropdown button:hover { background: var(--bg-4); }
 .cliente-dropdown button.cd-new { color: var(--green-h); font-weight: 600; }
 .cliente-dropdown .cd-empty { padding: .6rem .8rem; color: var(--ink-mute); font-size: .82rem; }
+.vta-cli-info { margin-top: .6rem; padding: .7rem .9rem; background: var(--bg-3); border: 1px solid var(--line-2); border-radius: 8px; font-size: .82rem; }
+.vta-cli-info .vci-row { display: flex; flex-wrap: wrap; gap: .4rem 1.1rem; margin-bottom: .35rem; }
+.vta-cli-info .vci-row:last-child { margin-bottom: 0; }
+.vta-cli-info .vci-k { color: var(--ink-mute); margin-right: .25rem; }
+.vta-cli-info .vci-ci { font-weight: 700; color: var(--ink); }
+.vta-cli-info .vci-miss { color: var(--amber); }
+.vta-cli-info .vci-warn { display: flex; align-items: center; gap: .5rem; padding: .55rem .7rem; margin-top: .5rem; background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.35); border-radius: 6px; color: var(--amber); font-size: .78rem; }
+.vta-cli-info .vci-warn button { background: var(--amber); color: #1a1200; border: none; padding: .3rem .7rem; border-radius: 5px; font-size: .78rem; font-weight: 600; cursor: pointer; margin-left: auto; }
 
 /* ── Cobranzas ─────────────────────────── */
 .cobranza-card { background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem 1.3rem; margin-bottom: .8rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
@@ -395,9 +390,6 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   /* Stat cards: evitar desborde */
   .stats-row { gap: .6rem; }
   .stat-card { min-width: 0; flex: 1 1 calc(50% - .3rem); }
-
-  /* Personal grid a 1 columna */
-  .personal-grid { grid-template-columns: 1fr; }
 
   /* Config grid a 1 columna */
   .config-grid { grid-template-columns: 1fr; }
@@ -621,16 +613,8 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
             <option value="rol">Ordenar por rol</option>
           </select>
         </div>
-        <div style="display:flex;gap:2px;background:var(--bg-3);border-radius:8px;padding:2px">
-          <button class="btn btn-sm personalViewBtn is-active" data-pview="grid" onclick="setPersonalView('grid')" title="Cuadrícula">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-          </button>
-          <button class="btn btn-sm personalViewBtn" data-pview="list" onclick="setPersonalView('list')" title="Lista">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-          </button>
-        </div>
       </div>
-      <div id="personalGrid" class="personal-grid"></div>
+      <div id="personalGrid"></div>
     </div>
 
     <!-- ═══ CLIENTES ═══ -->
@@ -642,6 +626,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       <div class="veh-filters" style="margin-bottom:1rem">
         <select id="cliBuscarPor" onchange="onCliBuscarPorChange()">
           <option value="nombre">Buscar por nombre</option>
+          <option value="ci">Buscar por cédula</option>
           <option value="telefono">Buscar por celular</option>
         </select>
         <input type="search" id="cliBuscar" placeholder="Escribí un nombre…" oninput="renderClientes()" style="min-width:220px;flex:1 1 220px">
@@ -888,6 +873,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
             <input type="hidden" id="vtaClienteId">
             <input type="text" id="vtaClienteBusca" placeholder="Buscar cliente por nombre..." autocomplete="off" oninput="buscarClienteVenta()" onfocus="buscarClienteVenta()" required>
             <div id="vtaClienteResultados" class="cliente-dropdown"></div>
+            <div id="vtaClienteInfo" class="vta-cli-info" style="display:none"></div>
           </div>
         </div>
 
@@ -947,7 +933,10 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     <div class="modal-body">
       <form id="cliForm">
         <input type="hidden" id="cliId">
-        <div class="form-row full"><div class="form-group"><label>Nombre y Apellido</label><input type="text" id="cliNombre" required placeholder="María Fernández"></div></div>
+        <div class="form-row">
+          <div class="form-group"><label>Nombre y Apellido</label><input type="text" id="cliNombre" required placeholder="María Fernández"></div>
+          <div class="form-group"><label>Cédula</label><input type="text" id="cliCi" inputmode="numeric" placeholder="1.234.567-8"></div>
+        </div>
         <div class="form-row">
           <div class="form-group"><label>Fecha de nacimiento</label><input type="date" id="cliNacimiento"></div>
           <div class="form-group"><label>Teléfono</label><input type="tel" id="cliTelefono" inputmode="tel" placeholder="099 123 456"></div>
@@ -1662,13 +1651,12 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   window.removeFoto=function(i){editFotos.splice(i,1);renderFotoPreview();};
 
   // ── Personal / Vendedores ───────────
-  var personalView="grid";
-  window.setPersonalView=function(v){
-    personalView=v;
-    document.querySelectorAll(".personalViewBtn").forEach(function(b){b.classList.toggle("is-active",b.dataset.pview===v);});
-    var grid=document.getElementById("personalGrid");
-    grid.classList.toggle("is-list",v==="list");
-  };
+  function sucLabel(s){
+    // Convertimos "Florencio Sánchez 650, Melo" en "Florencio Sánchez 650 - Melo"
+    // para que la ciudad quede visible al lado de la calle en la tabla.
+    if(!s) return "—";
+    return s.split(",").map(function(x){return x.trim();}).filter(Boolean).join(" - ");
+  }
   function renderPersonal(){
     var orden=document.getElementById("personalOrden").value;
     var ROL_ORDER={admin_general:0,admin_sucursal:1,vendedor:2,lavadero:3};
@@ -1679,20 +1667,33 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       }
       return (a.nombre||"").localeCompare(b.nombre||"");
     });
-    document.getElementById("personalGrid").innerHTML=sorted.map(function(v){
+    if(!sorted.length){
+      document.getElementById("personalGrid").innerHTML='<div class="no-sales">No hay personal cargado</div>';
+      return;
+    }
+    var rows=sorted.map(function(v){
       var comTxt=(!v.comision||v.comision.valor===0)?"Sin comisión":(v.comision.tipo==="porcentaje"?(v.comision.valor+"%"):("US$ "+fmtN(v.comision.valor)+" fijo"));
-      var accesoTxt=v.username?('🔑 '+esc(v.username)+' · '+esc(ROL_LABEL[v.rol]||v.rol)+(v.sucursal?(' · '+esc(v.sucursal.split(",")[0])):'')):'<span style="color:var(--amber)">⚠ Falta el acceso — editá para completarlo</span>';
-      return '<div class="personal-card">'+
-        '<div class="pc-name">'+esc(v.nombre)+'</div>'+
-        (v.telefono?'<div class="pc-detail">📞 '+esc(v.telefono)+'</div>':'')+
-        (v.email?'<div class="pc-detail">✉ '+esc(v.email)+'</div>':'')+
-        '<div class="pc-comision">'+comTxt+'</div>'+
-        '<div class="pc-detail" style="margin-top:.3rem">'+accesoTxt+'</div>'+
-        '<div class="pc-actions">'+
-          '<button class="btn btn-outline btn-sm" onclick="editVendedor(\''+v.id+'\')">Editar</button>'+
+      var rolTxt=v.username?esc(ROL_LABEL[v.rol]||v.rol):'<span style="color:var(--amber)">— sin acceso</span>';
+      var userTxt=v.username?esc(v.username):'<span style="color:var(--amber)">Falta configurar</span>';
+      var sucTxt=v.sucursal?esc(sucLabel(v.sucursal)):"—";
+      return '<tr>'+
+        '<td><strong>'+esc(v.nombre)+'</strong></td>'+
+        '<td>'+(v.telefono?esc(v.telefono):'—')+'</td>'+
+        '<td>'+(v.email?esc(v.email):'—')+'</td>'+
+        '<td>'+rolTxt+'</td>'+
+        '<td>'+userTxt+'</td>'+
+        '<td>'+sucTxt+'</td>'+
+        '<td>'+comTxt+'</td>'+
+        '<td style="white-space:nowrap">'+
+          '<button class="btn btn-outline btn-sm" onclick="editVendedor(\''+v.id+'\')">Editar</button> '+
           '<button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="confirmDeleteVnd(\''+v.id+'\')">Eliminar</button>'+
-        '</div></div>';
+        '</td>'+
+      '</tr>';
     }).join("");
+    document.getElementById("personalGrid").innerHTML=
+      '<div class="table-wrap"><table class="sales-table"><thead><tr>'+
+        '<th>Nombre</th><th>Contacto</th><th>Mail</th><th>Rol</th><th>Usuario</th><th>Sucursal</th><th>Comisiones</th><th></th>'+
+      '</tr></thead><tbody>'+rows+'</tbody></table></div>';
   }
 
   window.toggleComision=function(){document.getElementById("comFields").style.display=document.getElementById("vndHayCom").checked?"block":"none";};
@@ -1769,7 +1770,10 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   // ── Clientes ─────────────────────────
   window.onCliBuscarPorChange=function(){
     var por=document.getElementById("cliBuscarPor").value;
-    document.getElementById("cliBuscar").placeholder=por==="telefono"?"Escribí un celular…":"Escribí un nombre…";
+    var ph="Escribí un nombre…";
+    if(por==="telefono") ph="Escribí un celular…";
+    else if(por==="ci") ph="Escribí una cédula…";
+    document.getElementById("cliBuscar").placeholder=ph;
     renderClientes();
   };
   window.renderClientes=function renderClientes(){
@@ -1785,6 +1789,10 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
           var qd=q.replace(/\D/g,"");
           return qd?((c.telefono||"").replace(/\D/g,"").indexOf(qd)>-1):((c.telefono||"").toLowerCase().indexOf(q)>-1);
         }
+        if(por==="ci"){
+          var qc=q.replace(/\D/g,"");
+          return qc?((c.ci||"").replace(/\D/g,"").indexOf(qc)>-1):((c.ci||"").toLowerCase().indexOf(q)>-1);
+        }
         return (c.nombre||"").toLowerCase().indexOf(q)>-1;
       });
     }
@@ -1792,7 +1800,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     if(!lista.length){grid.innerHTML='<div class="no-sales">Ningún cliente coincide con la búsqueda</div>';return;}
     grid.innerHTML=lista.map(function(c){
       return '<div class="cli-list-row">'+
-        '<span class="cl-name" onclick="openCliDetail(\''+c.id+'\')" style="cursor:pointer" title="Ver detalle">'+esc(c.nombre)+'</span>'+
+        '<span class="cl-name" onclick="openCliDetail(\''+c.id+'\')" style="cursor:pointer" title="Ver detalle">'+esc(c.nombre)+(c.ci?' <span style="color:var(--ink-mute);font-weight:400;font-size:.78rem">· CI '+esc(c.ci)+'</span>':'')+'</span>'+
         '<span class="cl-detail">'+(c.telefono?esc(c.telefono):'—')+'</span>'+
         '<span class="cl-detail">'+(c.direccion?esc(c.direccion):'—')+'</span>'+
         '<span class="cl-detail">'+(c.fechaNacimiento?esc(fmtD(c.fechaNacimiento)):'—')+'</span>'+
@@ -1809,6 +1817,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     document.getElementById("cdTitulo").textContent=c.nombre;
     function item(label,val){return '<div class="vd-item"><span>'+label+'</span>'+esc(val)+'</div>';}
     document.getElementById("cdDatos").innerHTML=
+      item("Cédula", c.ci||"—")+
       item("Teléfono", c.telefono||"—")+
       item("Dirección", c.direccion||"—")+
       item("Nacimiento", c.fechaNacimiento?fmtD(c.fechaNacimiento):"—");
@@ -1846,6 +1855,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     document.getElementById("cliModalTitle").textContent=isEdit?"Editar cliente":"Nuevo cliente";
     document.getElementById("cliId").value=isEdit?c.id:"";
     document.getElementById("cliNombre").value=isEdit?c.nombre:(c&&c.nombrePrefill?c.nombrePrefill:"");
+    document.getElementById("cliCi").value=isEdit?(c.ci||""):"";
     document.getElementById("cliNacimiento").value=isEdit?(c.fechaNacimiento||""):"";
     document.getElementById("cliTelefono").value=isEdit?(c.telefono||""):"";
     document.getElementById("cliDireccion").value=isEdit?(c.direccion||""):"";
@@ -1864,6 +1874,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     var id=document.getElementById("cliId").value;
     var body={
       nombre:document.getElementById("cliNombre").value,
+      ci:document.getElementById("cliCi").value,
       fechaNacimiento:document.getElementById("cliNacimiento").value,
       telefono:document.getElementById("cliTelefono").value,
       direccion:document.getElementById("cliDireccion").value
@@ -1891,6 +1902,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     document.getElementById("vtaFecha").value=today();
     document.getElementById("vtaClienteId").value="";
     document.getElementById("vtaClienteBusca").value="";
+    var infoEl=document.getElementById("vtaClienteInfo"); if(infoEl){infoEl.style.display="none";infoEl.innerHTML="";}
     document.getElementById("vtaHayToma").checked=false;
     document.getElementById("tomaFields").style.display="none";
     document.getElementById("vtaTomaDesc").value="";
@@ -1954,6 +1966,41 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     document.getElementById("vtaClienteId").value=c.id;
     document.getElementById("vtaClienteBusca").value=c.nombre;
     document.getElementById("vtaClienteResultados").classList.remove("is-open");
+    renderClienteInfoVenta(c);
+  };
+  function renderClienteInfoVenta(c){
+    var box=document.getElementById("vtaClienteInfo"); if(!box) return;
+    var faltantes=[];
+    if(!c.ci) faltantes.push("cédula");
+    if(!c.telefono) faltantes.push("teléfono");
+    if(!c.direccion) faltantes.push("dirección");
+    if(!c.fechaNacimiento) faltantes.push("fecha de nacimiento");
+    function val(v,label){
+      if(v) return '<span><span class="vci-k">'+label+':</span>'+esc(v)+'</span>';
+      return '<span class="vci-miss"><span class="vci-k">'+label+':</span>— falta</span>';
+    }
+    var html=
+      '<div class="vci-row">'+
+        (c.ci?'<span class="vci-ci"><span class="vci-k">CI:</span>'+esc(c.ci)+'</span>':'<span class="vci-ci vci-miss"><span class="vci-k">CI:</span>— falta</span>')+
+        val(c.telefono,"Teléfono")+
+      '</div>'+
+      '<div class="vci-row">'+
+        val(c.direccion,"Dirección")+
+        val(c.fechaNacimiento?fmtD(c.fechaNacimiento):"","Nacimiento")+
+      '</div>';
+    if(faltantes.length){
+      html+='<div class="vci-warn">'+
+        '<span>⚠ Al cliente le falta: '+faltantes.join(", ")+'. Podés continuar con la venta igual.</span>'+
+        '<button type="button" onclick="editarClienteDesdeVenta(\''+c.id+'\')">Completar ahora</button>'+
+      '</div>';
+    }
+    box.innerHTML=html;
+    box.style.display="block";
+  }
+  window.editarClienteDesdeVenta=function(id){
+    var c=clientes.find(function(x){return x.id===id;}); if(!c) return;
+    openCliModal(c);
+    cliModalContext="venta";
   };
   document.addEventListener("click",function(e){
     if(!e.target.closest("#vtaClienteBusca") && !e.target.closest("#vtaClienteResultados")){

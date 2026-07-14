@@ -472,14 +472,27 @@ def api_vendedores_delete(vid):
 def api_clientes_list():
     return jsonify(read_json("clientes.json"))
 
+def _norm_ci(s):
+    # Normalizamos la cédula quitando puntos, guiones y espacios para poder
+    # comparar sin importar cómo la tipeó el usuario ("1.234.567-8" vs
+    # "12345678" refieren al mismo documento).
+    return "".join(ch for ch in (s or "") if ch.isdigit())
+
 @app.route("/api/clientes", methods=["POST"])
 @login_required
 def api_clientes_create():
     body = request.get_json(silent=True) or {}
     clientes = read_json("clientes.json")
+    ci = (body.get("ci") or "").strip()
+    ci_norm = _norm_ci(ci)
+    if ci_norm:
+        dup = next((c for c in clientes if _norm_ci(c.get("ci", "")) == ci_norm), None)
+        if dup:
+            return jsonify({"error": "Ya existe un cliente con esa cédula: " + dup.get("nombre", "")}), 409
     nuevo = {
         "id": "cli-" + uuid.uuid4().hex[:8],
         "nombre": body.get("nombre", "").strip(),
+        "ci": ci,
         "fechaNacimiento": body.get("fechaNacimiento", ""),
         "direccion": body.get("direccion", "").strip(),
         "telefono": body.get("telefono", "").strip(),
@@ -493,9 +506,15 @@ def api_clientes_create():
 def api_clientes_update(cid):
     body = request.get_json(silent=True) or {}
     clientes = read_json("clientes.json")
+    if "ci" in body:
+        ci_norm = _norm_ci(body.get("ci", ""))
+        if ci_norm:
+            dup = next((c for c in clientes if c["id"] != cid and _norm_ci(c.get("ci", "")) == ci_norm), None)
+            if dup:
+                return jsonify({"error": "Ya existe un cliente con esa cédula: " + dup.get("nombre", "")}), 409
     for i, c in enumerate(clientes):
         if c["id"] == cid:
-            for key in ["nombre", "fechaNacimiento", "direccion", "telefono"]:
+            for key in ["nombre", "ci", "fechaNacimiento", "direccion", "telefono"]:
                 if key in body:
                     clientes[i][key] = body[key].strip() if isinstance(body[key], str) else body[key]
             write_json("clientes.json", clientes)
