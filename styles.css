@@ -235,7 +235,7 @@ ul { list-style: none; padding: 0; }
 .splash.is-out { opacity: 0; pointer-events: none; clip-path: inset(0 0 100% 0); }
 @keyframes splashSafety { to { opacity: 0; pointer-events: none; clip-path: inset(0 0 100% 0); } }
 .splash-inner { display: flex; flex-direction: column; align-items: center; gap: .9rem; }
-.splash-mark { width: 120px; animation: splashFloat 2.4s var(--ease-soft) infinite; }
+.splash-mark { width: 260px; max-width: 80vw; height: auto; animation: splashFloat 2.4s var(--ease-soft) infinite; }
 @keyframes splashFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
 .splash-word { font-family: var(--font-display); font-weight: 800; letter-spacing: .42em; font-size: 1.1rem; color: var(--ink); padding-left: .42em; }
 .splash-bar { width: 130px; height: 2px; background: var(--line); border-radius: 2px; overflow: hidden; }

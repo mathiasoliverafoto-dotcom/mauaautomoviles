@@ -42,8 +42,8 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 /* ── Login ─────────────────────────────── */
 .login-wrap { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 1rem; }
 .login-box { background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 2.4rem 2rem; width: 100%; max-width: 380px; text-align: center; }
-.login-box img { width: 48px; margin-bottom: .8rem; }
-.login-box h1 { font-size: 1.2rem; font-weight: 700; margin-bottom: .3rem; }
+.login-box img.login-logo { width: 240px; max-width: 82%; height: auto; margin: 0 auto 1rem; display: block; }
+.login-box h1 { font-size: 1.05rem; font-weight: 600; color: var(--ink-soft); margin-bottom: 1.6rem; }
 .login-box p { color: var(--ink-soft); font-size: .85rem; margin-bottom: 1.6rem; }
 .login-box .field { margin-bottom: 1rem; }
 .login-box input { width: 100%; padding: .7rem .9rem; background: var(--bg-3); border: 1px solid var(--line); border-radius: 8px; color: var(--ink); outline: none; }
@@ -56,8 +56,8 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 .app { display: none; }
 .app.is-active { display: flex; min-height: 100vh; }
 .sidebar { width: 220px; flex-shrink: 0; background: var(--bg-2); border-right: 1px solid var(--line); padding: 1.2rem 0; display: flex; flex-direction: column; position: fixed; top: 0; bottom: 0; z-index: 50; }
-.sidebar-brand { padding: 0 1.2rem .8rem; display: flex; align-items: center; gap: .6rem; border-bottom: 1px solid var(--line); margin-bottom: .5rem; padding-bottom: 1rem; }
-.sidebar-brand img { width: 32px; }
+.sidebar-brand { padding: 0 1rem .8rem; display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--line); margin-bottom: .5rem; padding-bottom: 1rem; }
+.sidebar-brand img { width: 100%; max-width: 170px; height: auto; }
 .sidebar-brand span { font-weight: 700; font-size: .9rem; }
 .sidebar-nav { flex: 1; padding: .5rem .6rem; display: flex; flex-direction: column; gap: .15rem; }
 .sidebar-nav button { width: 100%; text-align: left; padding: .6rem .8rem; background: none; border: none; color: var(--ink-soft); border-radius: 8px; font-size: .85rem; font-weight: 500; display: flex; align-items: center; gap: .6rem; transition: all .15s; }
@@ -422,9 +422,8 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 <!-- LOGIN -->
 <div class="login-wrap" id="loginView">
   <div class="login-box">
-    <img src="assets/img/logo-mark.svg" alt="">
+    <img src="assets/img/logo.png" class="login-logo" alt="Mauá Automóviles">
     <h1>Panel de gestión</h1>
-    <p>Mauá Automóviles</p>
     <form id="loginForm">
       <div class="field"><input type="text" id="loginUser" placeholder="Usuario" autocomplete="username" required></div>
       <div class="field pw-field"><input type="password" id="loginPass" placeholder="Contraseña" autocomplete="current-password" required><button type="button" class="pw-toggle" onclick="togglePwEye(this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
@@ -437,7 +436,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 <!-- APP -->
 <div class="app" id="appView">
   <aside class="sidebar">
-    <div class="sidebar-brand"><img src="assets/img/logo-mark.svg" alt=""><span>Mauá Panel</span></div>
+    <div class="sidebar-brand"><img src="assets/img/logo.png" alt="Mauá Automóviles"></div>
     <nav class="sidebar-nav">
       <button data-nav="inicio" onclick="switchSection('inicio')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><rect x="9.5" y="13" width="5" height="7"/></svg>
