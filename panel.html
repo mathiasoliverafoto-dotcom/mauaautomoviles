@@ -765,15 +765,12 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
           <div class="form-toggle"><input type="checkbox" id="fPrimerDueno"><label for="fPrimerDueno">Primer dueño</label></div>
           <div class="form-toggle"><input type="checkbox" id="fPublicado" checked><label for="fPublicado">Publicado en el sitio</label></div>
         </div>
-        <div class="form-row">
-          <div class="form-group"><label>Matrícula</label><input type="text" id="fMatricula" placeholder="SBA 1234"></div>
-          <div class="form-group"><label>Padrón</label><input type="text" id="fPadron" placeholder="123456"></div>
-        </div>
         <div class="form-row triple">
           <div class="form-group"><label>Precio de costo (US$)</label><input type="number" id="fCosto" min="0"></div>
           <div class="form-group"><label>Precio de venta (US$)</label><input type="number" id="fPrecio" min="0" required></div>
           <div class="form-group"><label>Cuotas de ($)</label><input type="number" id="fCuota" min="0" placeholder="Se publica en la web"></div>
         </div>
+        <div class="form-row full"><div class="form-group"><label>Matrícula</label><input type="text" id="fMatricula" placeholder="SBA 1234"></div></div>
         <div style="margin-top:1rem">
           <label style="font-size:.78rem;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em">Fotos</label>
           <div class="foto-upload" id="fotoUpload"><p><strong>Arrastrá fotos acá</strong> o hacé click para seleccionar</p><p style="font-size:.75rem;margin-top:.3rem">JPG, PNG o WebP · máx. 16 MB</p><input type="file" id="fotoInput" multiple accept="image/*" style="display:none"></div>
@@ -1521,7 +1518,6 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       item("Sucursal", v.ubicacion)+
       item("Primer dueño", v.primerDueno?"Sí":"No")+
       (v.matricula?item("Matrícula", v.matricula):"")+
-      (v.padron?item("Padrón", v.padron):"")+
       item("Estado", estado)+
       costoItem+
       item("Precio de venta", v.precio>0?("US$ "+fmtN(v.precio)):"Consultar");
@@ -1564,7 +1560,6 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     document.getElementById("fAnio").value=isEdit?v.anio:new Date().getFullYear();
     document.getElementById("fKm").value=isEdit?v.km:0;
     document.getElementById("fMatricula").value=isEdit?(v.matricula||""):"";
-    document.getElementById("fPadron").value=isEdit?(v.padron||""):"";
     document.getElementById("fCosto").value=isEdit?(v.costo||0):0;
     document.getElementById("fPrecio").value=isEdit?v.precio:0;
     document.getElementById("fCuota").value=isEdit?(v.cuota||""):"";
@@ -1599,7 +1594,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     var form=document.getElementById("vehForm");
     if(!form.checkValidity()){form.reportValidity();return;}
     var id=document.getElementById("fId").value;
-    var body={marca:document.getElementById("fMarca").value,modelo:document.getElementById("fModelo").value,version:document.getElementById("fVersion").value,condicion:document.getElementById("fCondicion").value,etiqueta:document.getElementById("fEtiqueta").value,carroceria:document.getElementById("fCarroceria").value,anio:parseInt(document.getElementById("fAnio").value),km:parseInt(document.getElementById("fKm").value||0),matricula:document.getElementById("fMatricula").value,padron:document.getElementById("fPadron").value,costo:parseInt(document.getElementById("fCosto").value||0),precio:parseInt(document.getElementById("fPrecio").value),cuota:parseInt(document.getElementById("fCuota").value||0),tipoMotor:document.getElementById("fMotor").value,transmision:document.getElementById("fTransmision").value,traccion:document.getElementById("fTraccion").value,ubicacion:document.getElementById("fUbicacion").value,fechaIngreso:document.getElementById("fFecha").value,primerDueno:document.getElementById("fPrimerDueno").checked,publicado:document.getElementById("fPublicado").checked,fotos:editFotos};
+    var body={marca:document.getElementById("fMarca").value,modelo:document.getElementById("fModelo").value,version:document.getElementById("fVersion").value,condicion:document.getElementById("fCondicion").value,etiqueta:document.getElementById("fEtiqueta").value,carroceria:document.getElementById("fCarroceria").value,anio:parseInt(document.getElementById("fAnio").value),km:parseInt(document.getElementById("fKm").value||0),matricula:document.getElementById("fMatricula").value,costo:parseInt(document.getElementById("fCosto").value||0),precio:parseInt(document.getElementById("fPrecio").value),cuota:parseInt(document.getElementById("fCuota").value||0),tipoMotor:document.getElementById("fMotor").value,transmision:document.getElementById("fTransmision").value,traccion:document.getElementById("fTraccion").value,ubicacion:document.getElementById("fUbicacion").value,fechaIngreso:document.getElementById("fFecha").value,primerDueno:document.getElementById("fPrimerDueno").checked,publicado:document.getElementById("fPublicado").checked,fotos:editFotos};
     var url=id?"/api/vehiculos/"+id:"/api/vehiculos";
     document.getElementById("btnSaveVeh").disabled=true;
     api(url,{method:id?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(function(){closeVehModal();loadAll();toast(id?"Vehículo actualizado":"Vehículo creado");}).catch(function(e){toast(e.message,"err");}).finally(function(){document.getElementById("btnSaveVeh").disabled=false;});
