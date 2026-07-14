@@ -757,12 +757,13 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
           <div class="form-group"><label>Transmisión</label><select id="fTransmision"><option>Manual</option><option>Automática</option></select></div>
           <div class="form-group"><label>Tracción</label><select id="fTraccion"><option>Delantera</option><option>Trasera</option><option>4x4</option></select></div>
         </div>
+        <div class="form-row full"><div class="form-group"><label>Matrícula</label><input type="text" id="fMatricula" placeholder="SBA 1234"></div></div>
         <div class="form-row">
           <div class="form-group"><label>Sucursal</label><select id="fUbicacion"><option>Florencio Sánchez 650, Melo</option><option>Bvar. Francisco Mata 524, Melo</option><option>Blvr. Aparicio Saravia, Río Branco</option></select></div>
           <div class="form-group"><label>Fecha ingreso</label><input type="date" id="fFecha"></div>
         </div>
         <div class="form-row">
-          <div class="form-toggle"><input type="checkbox" id="fPrimerDueno"><label for="fPrimerDueno">Primer dueño</label></div>
+          <div class="form-toggle"><input type="checkbox" id="fPrimerDueno"><label for="fPrimerDueno">Único dueño</label></div>
           <div class="form-toggle"><input type="checkbox" id="fPublicado" checked><label for="fPublicado">Publicado en el sitio</label></div>
         </div>
         <div class="form-row triple">
@@ -770,7 +771,6 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
           <div class="form-group"><label>Precio de venta (US$)</label><input type="number" id="fPrecio" min="0" required></div>
           <div class="form-group"><label>Cuotas de ($)</label><input type="number" id="fCuota" min="0" placeholder="Se publica en la web"></div>
         </div>
-        <div class="form-row full"><div class="form-group"><label>Matrícula</label><input type="text" id="fMatricula" placeholder="SBA 1234"></div></div>
         <div style="margin-top:1rem">
           <label style="font-size:.78rem;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em">Fotos</label>
           <div class="foto-upload" id="fotoUpload"><p><strong>Arrastrá fotos acá</strong> o hacé click para seleccionar</p><p style="font-size:.75rem;margin-top:.3rem">JPG, PNG o WebP · máx. 16 MB</p><input type="file" id="fotoInput" multiple accept="image/*" style="display:none"></div>
@@ -1516,7 +1516,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       item("Transmisión", v.transmision)+
       item("Tracción", v.traccion)+
       item("Sucursal", v.ubicacion)+
-      item("Primer dueño", v.primerDueno?"Sí":"No")+
+      item("Único dueño", v.primerDueno?"Sí":"No")+
       (v.matricula?item("Matrícula", v.matricula):"")+
       item("Estado", estado)+
       costoItem+

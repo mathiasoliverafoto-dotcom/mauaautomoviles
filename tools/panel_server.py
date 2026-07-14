@@ -228,7 +228,7 @@ CAMPO_LABEL = {
     "ubicacion": "Sucursal", "fechaIngreso": "Fecha de ingreso",
     "anio": "Año", "km": "Kilómetros", "matricula": "Matrícula",
     "costo": "Precio de costo", "precio": "Precio", "cuota": "Cuotas de (web)",
-    "primerDueno": "Primer dueño", "publicado": "Publicado",
+    "primerDueno": "Único dueño", "publicado": "Publicado",
 }
 
 def _fmt_val(campo, val):
