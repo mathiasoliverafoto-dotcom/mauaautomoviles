@@ -303,6 +303,28 @@ ul { list-style: none; padding: 0; }
   /* Sombra + un halo rojizo abajo para mantener la identidad Mauá. */
   filter: drop-shadow(0 30px 40px rgba(0,0,0,.5)) drop-shadow(0 12px 30px rgba(226,32,44,.15));
 }
+/* Desktop: la foto sale del grid y se convierte en un "hero image"
+   full-bleed contra el borde derecho. Difuminada hacia el centro y
+   hacia los bordes superior/inferior con un mask radial para que no
+   corte contra el fondo oscuro. */
+@media (min-width: 960px) {
+  .hero-stage {
+    position: absolute;
+    inset: 0 0 0 auto;
+    width: 68%;
+    max-width: 1100px;
+    z-index: 1;
+    pointer-events: none;
+  }
+  .hero-car {
+    width: 100%; height: 100%;
+    border-radius: 0;
+    object-position: right center;
+    filter: none;
+    -webkit-mask-image: radial-gradient(ellipse 95% 130% at 78% 50%, #000 34%, rgba(0,0,0,.55) 60%, transparent 82%);
+            mask-image: radial-gradient(ellipse 95% 130% at 78% 50%, #000 34%, rgba(0,0,0,.55) 60%, transparent 82%);
+  }
+}
 .hero-sweep { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
 .hero-sweep::before {
   content: ""; position: absolute; top: -20%; left: 0; width: 32%; height: 140%;
