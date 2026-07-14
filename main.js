@@ -369,10 +369,59 @@
     var hero = $("[data-md-hero]");
     if (hero) { hero.src = m.hero || ""; hero.alt = m.nombre; }
 
-    // CTAs WhatsApp
-    var waMsg = "Hola! Quiero información sobre " + m.nombre + ".";
-    var waHref = (data.whatsapp || "https://wa.me/59892550422") + "?text=" + encodeURIComponent(waMsg);
-    $$("[data-md-cta-wa], [data-md-cta-wa-b]").forEach(function (a) { a.setAttribute("href", waHref); });
+    // Estado del color activo — usado también por el CTA de WhatsApp
+    var colorActivo = null;
+    function waHrefFor(color) {
+      var msg = "Hola! Quiero información sobre " + m.nombre;
+      if (color && color.nombre) msg += " (color " + color.nombre + ")";
+      msg += ".";
+      return (data.whatsapp || "https://wa.me/59892550422") + "?text=" + encodeURIComponent(msg);
+    }
+    function updateWaCtas() {
+      var href = waHrefFor(colorActivo);
+      $$("[data-md-cta-wa], [data-md-cta-wa-b]").forEach(function (a) { a.setAttribute("href", href); });
+    }
+    updateWaCtas();
+
+    // Selector de color inline (bajo la foto del hero)
+    var picker = $("[data-md-color-picker]");
+    var swatchWrap = $("[data-md-color-swatches]");
+    var colorLabel = $("[data-md-color-actual]");
+    if (picker && swatchWrap && m.colores && m.colores.length) {
+      picker.hidden = false;
+      swatchWrap.innerHTML = m.colores.map(function (c, i) {
+        var noImg = !c.imagen;
+        return '<button type="button" class="md-swatch' + (i === 0 ? ' is-active' : '') + '"'
+          + ' data-color-i="' + i + '"'
+          + ' style="--sw:' + escAttr(c.hex || '#333') + '"'
+          + ' title="' + escAttr(c.nombre + (noImg ? ' (consultar en el local)' : '')) + '"'
+          + ' aria-label="' + escAttr(c.nombre) + '">'
+          + '<span class="md-swatch-dot"></span>'
+          + '</button>';
+      }).join("");
+      function selectColor(i) {
+        var c = m.colores[i]; if (!c) return;
+        colorActivo = c;
+        if (colorLabel) colorLabel.textContent = c.nombre || "";
+        // Si el color tiene su propia foto, la cambio con un fade suave.
+        if (c.imagen && hero) {
+          hero.classList.add("is-swap");
+          setTimeout(function () {
+            hero.src = c.imagen;
+            hero.classList.remove("is-swap");
+          }, 160);
+        }
+        $$(".md-swatch", swatchWrap).forEach(function (b) { b.classList.toggle("is-active", parseInt(b.dataset.colorI, 10) === i); });
+        updateWaCtas();
+      }
+      swatchWrap.addEventListener("click", function (e) {
+        var b = e.target.closest("[data-color-i]"); if (!b) return;
+        selectColor(parseInt(b.dataset.colorI, 10));
+      });
+      selectColor(0);
+    } else if (picker) {
+      picker.hidden = true;
+    }
 
     // Highlights
     var hlWrap = $("[data-md-highlights]");
@@ -392,21 +441,6 @@
     }
     fillList("[data-md-equipamiento]", "[data-md-block-equip]", m.equipamiento);
     fillList("[data-md-seguridad]", "[data-md-block-seg]", m.seguridad);
-
-    // Colores
-    var colWrap = $("[data-md-colores]");
-    var colBlock = $("[data-md-block-colores]");
-    if (colWrap && colBlock) {
-      if (m.colores && m.colores.length) {
-        colBlock.hidden = false;
-        colWrap.innerHTML = m.colores.map(function (c) {
-          return '<div class="md-color">'
-            + '<span class="md-color-swatch" style="background:' + escAttr(c.hex || "#333") + '"></span>'
-            + '<span class="md-color-nombre">' + escHTML(c.nombre || "") + '</span>'
-            + '</div>';
-        }).join("");
-      } else { colBlock.hidden = true; }
-    }
 
     // Versiones
     var verWrap = $("[data-md-versiones]");
