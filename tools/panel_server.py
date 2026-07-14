@@ -198,6 +198,8 @@ def api_vehiculos_create():
         "carroceria": body.get("carroceria", "Hatch"),
         "anio": int(body.get("anio", datetime.now().year)),
         "km": int(body.get("km", 0)),
+        "matricula": body.get("matricula", "").strip(),
+        "padron": body.get("padron", "").strip(),
         "costo": int(body.get("costo", 0)),
         "precio": int(body.get("precio", 0)),
         "cuota": int(body.get("cuota", 0)),
@@ -225,7 +227,8 @@ CAMPO_LABEL = {
     "condicion": "Condición", "etiqueta": "Etiqueta", "carroceria": "Carrocería",
     "tipoMotor": "Combustible", "transmision": "Transmisión", "traccion": "Tracción",
     "ubicacion": "Sucursal", "fechaIngreso": "Fecha de ingreso",
-    "anio": "Año", "km": "Kilómetros", "costo": "Precio de costo", "precio": "Precio", "cuota": "Cuotas de (web)",
+    "anio": "Año", "km": "Kilómetros", "matricula": "Matrícula", "padron": "Padrón",
+    "costo": "Precio de costo", "precio": "Precio", "cuota": "Cuotas de (web)",
     "primerDueno": "Primer dueño", "publicado": "Publicado",
 }
 
@@ -252,7 +255,8 @@ def api_vehiculos_update(vid):
                     vehiculos[i][campo] = nuevo
 
             for key in ["marca", "modelo", "version", "condicion", "etiqueta", "carroceria",
-                        "tipoMotor", "transmision", "traccion", "ubicacion", "fechaIngreso"]:
+                        "tipoMotor", "transmision", "traccion", "ubicacion", "fechaIngreso",
+                        "matricula", "padron"]:
                 if key in body:
                     registrar(key, body[key].strip() if isinstance(body[key], str) else body[key])
             for key in ["anio", "km", "costo", "precio", "cuota"]:
