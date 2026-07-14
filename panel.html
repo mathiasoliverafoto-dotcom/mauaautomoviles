@@ -315,7 +315,8 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   .stat-card { min-width: 0 !important; width: 100%; overflow-wrap: anywhere; }
   [style*="min-width"] { min-width: 0 !important; }
   [style*="display:flex"], [style*="display: flex"] { max-width: 100%; box-sizing: border-box; }
-  input, select, textarea { max-width: 100% !important; }
+  /* font-size >= 16px evita el auto-zoom de iOS al enfocar un campo */
+  input, select, textarea { max-width: 100% !important; font-size: 16px !important; }
   .form-group { max-width: 100%; }
   [style*="flex:1 1"] { flex-basis: 0 !important; min-width: 0 !important; }
 
