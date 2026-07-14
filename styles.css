@@ -883,17 +883,22 @@ ul { list-style: none; padding: 0; }
 
 .md-hero-wrap {
   position: relative;
+  /* Contenedor entero claro: los autos oscuros (negro / gris grafito)
+     no se pierden en el fondo. Sutil tinte rojo arriba a la derecha
+     para no perder la identidad Mauá. */
   background:
-    radial-gradient(1200px 400px at 80% 0%, rgba(226,32,44,.10), transparent 60%),
-    radial-gradient(900px 300px at 10% 100%, rgba(255,255,255,.04), transparent 60%),
-    var(--bg-2);
-  border: 1px solid var(--line);
+    radial-gradient(900px 320px at 85% 0%, rgba(226,32,44,.08), transparent 60%),
+    linear-gradient(180deg, #ffffff 0%, #f3efe7 100%);
+  border: 1px solid rgba(0,0,0,.06);
   border-radius: 22px;
   overflow: hidden;
   margin-bottom: 3rem;
+  color: #1a1a1a;
 }
 .md-hero { display: grid; gap: 2rem; padding: 3rem 1.4rem; align-items: center; }
-.md-hero-copy .md-eyebrow { display: inline-flex; align-items: center; gap: .5rem; }
+/* Dentro del hero claro los colores del texto cambian a oscuros. */
+.md-hero-copy .md-eyebrow { display: inline-flex; align-items: center; gap: .5rem; color: #6a6a6a; }
+.md-hero-copy .md-eyebrow .dot { background: var(--red); }
 .md-title {
   font-family: "Sora", sans-serif;
   font-size: clamp(2.4rem, 6vw, 4.4rem);
@@ -901,21 +906,30 @@ ul { list-style: none; padding: 0; }
   font-weight: 800;
   letter-spacing: -.02em;
   margin: .4rem 0;
-  background: var(--chrome);
+  /* Chrome oscuro para que se lea sobre el fondo claro. */
+  background: linear-gradient(180deg, #1e2126 0%, #43494f 55%, #23262b 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
 }
 .md-subtitle {
-  color: var(--ink-soft);
+  color: #6a6a6a;
   font-size: 1.05rem;
   margin: 0 0 1rem;
   text-transform: uppercase;
   letter-spacing: .12em;
   font-weight: 600;
 }
-.md-tagline { margin: 0 0 1.6rem; max-width: 42ch; }
+.md-tagline { margin: 0 0 1.6rem; max-width: 42ch; color: #3a3a3a; }
 .md-cta { display: flex; gap: .8rem; flex-wrap: wrap; }
+/* El botón "Ver otros modelos" es ghost: sobre fondo claro necesita
+   borde y texto oscuros para verse. */
+.md-hero-copy .btn-ghost {
+  color: #1a1a1a;
+  border-color: rgba(0,0,0,.25);
+  background: transparent;
+}
+.md-hero-copy .btn-ghost:hover { border-color: #1a1a1a; }
 
 .md-hero-photo {
   position: relative;
@@ -925,13 +939,8 @@ ul { list-style: none; padding: 0; }
   align-items: center;
   justify-content: center;
   gap: 1rem;
-  /* Fondo claro tipo escenario: los autos oscuros (negro, gris grafito)
-     no se pierden en un contenedor tan oscuro como el resto de la web. */
-  background:
-    radial-gradient(90% 60% at 50% 35%, #ffffff 0%, #ebe8e1 55%, #d9d6cd 100%);
-  border-radius: 18px;
-  padding: 1.6rem 1.2rem 1.4rem;
-  box-shadow: inset 0 -30px 60px -30px rgba(0,0,0,.15);
+  /* Sin fondo propio: hereda el del md-hero-wrap. */
+  padding: 1rem 0 .5rem;
 }
 .md-hero-photo .md-floor {
   position: absolute; left: 50%; bottom: 22%;
