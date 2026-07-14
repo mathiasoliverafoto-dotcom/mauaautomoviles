@@ -615,7 +615,7 @@ def api_ventas_create():
             "modelo": veh.get("modelo", ""),
             "version": veh.get("version", ""),
             "anio": veh.get("anio", 0),
-            "foto": veh.get("fotos", [None])[0],
+            "foto": (veh.get("fotos") or [None])[0],
         },
         "sucursal": veh.get("ubicacion", ""),
         "vendedorId": vnd_id,
