@@ -483,8 +483,8 @@ def _norm_ci(s):
 def api_clientes_create():
     body = request.get_json(silent=True) or {}
     clientes = read_json("clientes.json")
-    ci = (body.get("ci") or "").strip()
-    ci_norm = _norm_ci(ci)
+    # La CI se guarda siempre normalizada (solo dígitos). El front formatea al mostrar.
+    ci_norm = _norm_ci(body.get("ci", ""))
     if ci_norm:
         dup = next((c for c in clientes if _norm_ci(c.get("ci", "")) == ci_norm), None)
         if dup:
@@ -492,7 +492,7 @@ def api_clientes_create():
     nuevo = {
         "id": "cli-" + uuid.uuid4().hex[:8],
         "nombre": body.get("nombre", "").strip(),
-        "ci": ci,
+        "ci": ci_norm,
         "fechaNacimiento": body.get("fechaNacimiento", ""),
         "direccion": body.get("direccion", "").strip(),
         "telefono": body.get("telefono", "").strip(),
@@ -508,6 +508,7 @@ def api_clientes_update(cid):
     clientes = read_json("clientes.json")
     if "ci" in body:
         ci_norm = _norm_ci(body.get("ci", ""))
+        body["ci"] = ci_norm
         if ci_norm:
             dup = next((c for c in clientes if c["id"] != cid and _norm_ci(c.get("ci", "")) == ci_norm), None)
             if dup:

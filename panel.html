@@ -935,7 +935,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
         <input type="hidden" id="cliId">
         <div class="form-row">
           <div class="form-group"><label>Nombre y Apellido</label><input type="text" id="cliNombre" required placeholder="María Fernández"></div>
-          <div class="form-group"><label>Cédula</label><input type="text" id="cliCi" inputmode="numeric" placeholder="1.234.567-8"></div>
+          <div class="form-group"><label>Cédula</label><input type="text" id="cliCi" inputmode="numeric" placeholder="1.234.567-8" maxlength="12" oninput="formatCiInput(this)"></div>
         </div>
         <div class="form-row">
           <div class="form-group"><label>Fecha de nacimiento</label><input type="date" id="cliNacimiento"></div>
@@ -1019,6 +1019,26 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   function toast(msg, type) { var el=document.getElementById("toast"); el.textContent=msg; el.className="toast toast-"+(type||"ok")+" is-visible"; clearTimeout(el._t); el._t=setTimeout(function(){el.classList.remove("is-visible");},3000); }
   function today() { var d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
   function fmtD(iso) { if(!iso) return ""; var p=iso.split("-"); return p.length===3?(p[2]+"/"+p[1]+"/"+p[0]):iso; }
+  // Formatea una CI (solo dígitos o crudo) al estilo uruguayo "1.234.567-8".
+  // El último dígito es el verificador y va después del guión; los previos
+  // se agrupan de a 3 desde la derecha con puntos.
+  function fmtCI(s){
+    var d=String(s==null?"":s).replace(/\D/g,"").slice(0,8);
+    if(!d) return "";
+    if(d.length===1) return d;
+    var check=d.slice(-1), body=d.slice(0,-1), groups=[];
+    while(body.length>3){ groups.unshift(body.slice(-3)); body=body.slice(0,-3); }
+    if(body.length) groups.unshift(body);
+    return groups.join(".")+"-"+check;
+  }
+  window.formatCiInput=function(el){
+    var start=el.selectionStart, prevLen=el.value.length;
+    el.value=fmtCI(el.value);
+    // Al reformatear se agregan/quitan caracteres; mantenemos el cursor al final
+    // cuando el usuario está tipeando (comportamiento simple y predecible).
+    var diff=el.value.length-prevLen;
+    try{ el.setSelectionRange(start+diff, start+diff); }catch(e){}
+  };
   function shortSuc(s){if(!s)return'—';var p=s.split(',');return p[p.length-1].trim();}
   function metodoTxt(m){return m==="transferencia"?"Transferencia":(m==="financiacion_bancaria"?"Financiación bancaria":"Efectivo");}
   function ventasTablaHTML(lista,cuotasExtra){
@@ -1800,7 +1820,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     if(!lista.length){grid.innerHTML='<div class="no-sales">Ningún cliente coincide con la búsqueda</div>';return;}
     grid.innerHTML=lista.map(function(c){
       return '<div class="cli-list-row">'+
-        '<span class="cl-name" onclick="openCliDetail(\''+c.id+'\')" style="cursor:pointer" title="Ver detalle">'+esc(c.nombre)+(c.ci?' <span style="color:var(--ink-mute);font-weight:400;font-size:.78rem">· CI '+esc(c.ci)+'</span>':'')+'</span>'+
+        '<span class="cl-name" onclick="openCliDetail(\''+c.id+'\')" style="cursor:pointer" title="Ver detalle">'+esc(c.nombre)+(c.ci?' <span style="color:var(--ink-mute);font-weight:400;font-size:.78rem">· CI '+esc(fmtCI(c.ci))+'</span>':'')+'</span>'+
         '<span class="cl-detail">'+(c.telefono?esc(c.telefono):'—')+'</span>'+
         '<span class="cl-detail">'+(c.direccion?esc(c.direccion):'—')+'</span>'+
         '<span class="cl-detail">'+(c.fechaNacimiento?esc(fmtD(c.fechaNacimiento)):'—')+'</span>'+
@@ -1817,7 +1837,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     document.getElementById("cdTitulo").textContent=c.nombre;
     function item(label,val){return '<div class="vd-item"><span>'+label+'</span>'+esc(val)+'</div>';}
     document.getElementById("cdDatos").innerHTML=
-      item("Cédula", c.ci||"—")+
+      item("Cédula", c.ci?fmtCI(c.ci):"—")+
       item("Teléfono", c.telefono||"—")+
       item("Dirección", c.direccion||"—")+
       item("Nacimiento", c.fechaNacimiento?fmtD(c.fechaNacimiento):"—");
@@ -1855,7 +1875,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     document.getElementById("cliModalTitle").textContent=isEdit?"Editar cliente":"Nuevo cliente";
     document.getElementById("cliId").value=isEdit?c.id:"";
     document.getElementById("cliNombre").value=isEdit?c.nombre:(c&&c.nombrePrefill?c.nombrePrefill:"");
-    document.getElementById("cliCi").value=isEdit?(c.ci||""):"";
+    document.getElementById("cliCi").value=isEdit?fmtCI(c.ci||""):"";
     document.getElementById("cliNacimiento").value=isEdit?(c.fechaNacimiento||""):"";
     document.getElementById("cliTelefono").value=isEdit?(c.telefono||""):"";
     document.getElementById("cliDireccion").value=isEdit?(c.direccion||""):"";
@@ -1981,7 +2001,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     }
     var html=
       '<div class="vci-row">'+
-        (c.ci?'<span class="vci-ci"><span class="vci-k">CI:</span>'+esc(c.ci)+'</span>':'<span class="vci-ci vci-miss"><span class="vci-k">CI:</span>— falta</span>')+
+        (c.ci?'<span class="vci-ci"><span class="vci-k">CI:</span>'+esc(fmtCI(c.ci))+'</span>':'<span class="vci-ci vci-miss"><span class="vci-k">CI:</span>— falta</span>')+
         val(c.telefono,"Teléfono")+
       '</div>'+
       '<div class="vci-row">'+
