@@ -930,6 +930,22 @@ ul { list-style: none; padding: 0; }
   background: transparent;
 }
 .md-hero-copy .btn-ghost:hover { border-color: #1a1a1a; }
+/* .btn-wa por defecto es blanco sobre casi transparente (pensado para
+   fondos oscuros). En el hero claro se pierde: lo forzamos a verde
+   WhatsApp sólido — que además funciona bien como CTA. */
+.md-hero-copy .btn-wa {
+  background: var(--wa);
+  border-color: var(--wa);
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(37,211,102,.28);
+}
+.md-hero-copy .btn-wa .ico-wa { color: #fff; }
+.md-hero-copy .btn-wa:hover {
+  background: #1fbb59;
+  border-color: #1fbb59;
+  color: #fff;
+  box-shadow: 0 8px 22px rgba(37,211,102,.35);
+}
 
 .md-hero-photo {
   position: relative;
