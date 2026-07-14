@@ -179,6 +179,8 @@ ul { list-style: none; padding: 0; }
 }
 .brand { display: inline-flex; align-items: center; gap: .65rem; }
 .brand-mark { width: 62px; height: auto; filter: drop-shadow(0 4px 10px rgba(0,0,0,.5)); }
+.brand-logo { height: 46px; width: auto; display: block; filter: drop-shadow(0 4px 10px rgba(0,0,0,.45)); }
+.brand-logo-footer { height: 62px; }
 .brand-word { display: flex; flex-direction: column; line-height: 1; }
 .brand-word strong { font-family: var(--font-display); font-weight: 800; font-size: 1.16rem; letter-spacing: .02em; }
 .brand-word small { font-family: var(--font-mono); font-size: .56rem; letter-spacing: .42em; color: var(--ink-mute); margin-top: 2px; }
