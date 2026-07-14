@@ -303,17 +303,20 @@ ul { list-style: none; padding: 0; }
   /* Sombra + un halo rojizo abajo para mantener la identidad Mauá. */
   filter: drop-shadow(0 30px 40px rgba(0,0,0,.5)) drop-shadow(0 12px 30px rgba(226,32,44,.15));
 }
-/* Desktop: la foto ocupa la mitad derecha con márgenes definidos
-   arriba, derecha y abajo. Solo el borde izquierdo (el que está
-   hacia el centro del hero, contra el copy) se difumina. */
+/* Desktop: la foto ocupa la mitad derecha del hero pegada a los
+   bordes — top hasta el nav, bottom hasta donde empieza la sección
+   clara de "Chery 0 km", right hasta el borde de pantalla. Solo el
+   borde izquierdo (contra el copy) se difumina.
+   El bottom negativo compensa el padding-bottom de 2rem del .hero
+   para que la foto llegue exactamente al inicio de la sección
+   siguiente. */
 @media (min-width: 960px) {
   .hero-stage {
     position: absolute;
-    top: 10%;
-    right: 1.5%;
-    bottom: 6%;
+    top: 0;
+    right: 0;
+    bottom: -2rem;
     width: 50%;
-    max-width: 980px;
     z-index: 1;
     pointer-events: none;
   }
