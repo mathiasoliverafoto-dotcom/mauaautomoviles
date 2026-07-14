@@ -383,28 +383,30 @@
     }
     updateWaCtas();
 
-    // Selector de color inline (bajo la foto del hero)
+    // Selector de color inline (bajo la foto del hero).
+    // Solo tiene sentido mostrarlo si podemos cambiar la foto: pide 2+ colores
+    // con imagen propia. Si el modelo tiene una sola foto (M7, Himla), no hay
+    // nada que seleccionar y el bloque queda oculto.
     var picker = $("[data-md-color-picker]");
     var swatchWrap = $("[data-md-color-swatches]");
     var colorLabel = $("[data-md-color-actual]");
-    if (picker && swatchWrap && m.colores && m.colores.length) {
+    var coloresPicker = (m.colores || []).filter(function (c) { return !!c.imagen; });
+    if (picker && swatchWrap && coloresPicker.length >= 2) {
       picker.hidden = false;
-      swatchWrap.innerHTML = m.colores.map(function (c, i) {
-        var noImg = !c.imagen;
+      swatchWrap.innerHTML = coloresPicker.map(function (c, i) {
         return '<button type="button" class="md-swatch' + (i === 0 ? ' is-active' : '') + '"'
           + ' data-color-i="' + i + '"'
           + ' style="--sw:' + escAttr(c.hex || '#333') + '"'
-          + ' title="' + escAttr(c.nombre + (noImg ? ' (consultar en el local)' : '')) + '"'
+          + ' title="' + escAttr(c.nombre) + '"'
           + ' aria-label="' + escAttr(c.nombre) + '">'
           + '<span class="md-swatch-dot"></span>'
           + '</button>';
       }).join("");
       function selectColor(i) {
-        var c = m.colores[i]; if (!c) return;
+        var c = coloresPicker[i]; if (!c) return;
         colorActivo = c;
         if (colorLabel) colorLabel.textContent = c.nombre || "";
-        // Si el color tiene su propia foto, la cambio con un fade suave.
-        if (c.imagen && hero) {
+        if (hero) {
           hero.classList.add("is-swap");
           setTimeout(function () {
             hero.src = c.imagen;
