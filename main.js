@@ -320,13 +320,107 @@
     });
     if (prevBtn) prevBtn.addEventListener("click", function () { goModel(modelIndex - 1); });
     if (nextBtn) nextBtn.addEventListener("click", function () { goModel(modelIndex + 1); });
-    /* Sin ficha de modelo todavía: el botón no navega a ningún lado. */
-    if (viewBtn) viewBtn.addEventListener("click", function (e) { e.preventDefault(); });
+    /* "Ver modelo" navega a la ficha modelo.html?id=<id-del-modelo>. */
+    if (viewBtn) {
+      var updateViewHref = function () {
+        var modelo = data.cheryLineup[catIndex].modelos[modelIndex];
+        if (modelo) viewBtn.setAttribute("href", "modelo.html?id=" + encodeURIComponent(modelo.id));
+      };
+      var origRender = renderModel;
+      renderModel = function () { origRender(); updateViewHref(); };
+    }
 
     renderCategories();
     renderTabs();
     renderModel();
   }
+
+  /* ---- Ficha de modelo Chery (modelo.html?id=<id>) ---- */
+  function initModeloDetail() {
+    var root = $("[data-md]");
+    if (!root) return;
+    var modelos = data.cheryModelos || {};
+    var params = new URLSearchParams(location.search);
+    var id = params.get("id") || "";
+    var m = modelos[id];
+    var body = $("[data-md-body]");
+    var notfound = $("[data-md-notfound]");
+
+    if (!m) {
+      if (notfound) notfound.hidden = false;
+      if (body) body.hidden = true;
+      return;
+    }
+    if (body) body.hidden = false;
+    if (notfound) notfound.hidden = true;
+
+    // Título de pestaña + meta description
+    document.title = m.nombre + " · Mauá Automóviles";
+    var meta = document.querySelector('meta[name="description"]');
+    if (meta && m.tagline) meta.setAttribute("content", m.tagline + " Mauá Automóviles, representante oficial Chery en Cerro Largo.");
+
+    // Textos
+    $$("[data-md-nombre]").forEach(function (el) { el.textContent = m.nombre; });
+    var sub = $("[data-md-sub]"); if (sub) sub.textContent = m.subtitulo || "";
+    var cat = $("[data-md-cat]"); if (cat) cat.textContent = m.categoria || "Chery 0 km";
+    var tag = $("[data-md-tagline]"); if (tag) tag.textContent = m.tagline || "";
+
+    // Hero
+    var hero = $("[data-md-hero]");
+    if (hero) { hero.src = m.hero || ""; hero.alt = m.nombre; }
+
+    // CTAs WhatsApp
+    var waMsg = "Hola! Quiero información sobre " + m.nombre + ".";
+    var waHref = (data.whatsapp || "https://wa.me/59892550422") + "?text=" + encodeURIComponent(waMsg);
+    $$("[data-md-cta-wa], [data-md-cta-wa-b]").forEach(function (a) { a.setAttribute("href", waHref); });
+
+    // Highlights
+    var hlWrap = $("[data-md-highlights]");
+    if (hlWrap && Array.isArray(m.highlights)) {
+      hlWrap.innerHTML = m.highlights.map(function (h) {
+        return '<div class="md-hl"><span class="md-hl-k">' + escHTML(h.k) + '</span><span class="md-hl-v">' + escHTML(h.v) + '</span></div>';
+      }).join("");
+    }
+
+    // Equipamiento / Seguridad (ocultamos el bloque si viene vacío)
+    function fillList(sel, blockSel, arr) {
+      var list = $(sel), block = $(blockSel);
+      if (!list || !block) return;
+      if (!arr || !arr.length) { block.hidden = true; return; }
+      block.hidden = false;
+      list.innerHTML = arr.map(function (t) { return "<li>" + escHTML(t) + "</li>"; }).join("");
+    }
+    fillList("[data-md-equipamiento]", "[data-md-block-equip]", m.equipamiento);
+    fillList("[data-md-seguridad]", "[data-md-block-seg]", m.seguridad);
+
+    // Colores
+    var colWrap = $("[data-md-colores]");
+    var colBlock = $("[data-md-block-colores]");
+    if (colWrap && colBlock) {
+      if (m.colores && m.colores.length) {
+        colBlock.hidden = false;
+        colWrap.innerHTML = m.colores.map(function (c) {
+          return '<div class="md-color">'
+            + '<span class="md-color-swatch" style="background:' + escAttr(c.hex || "#333") + '"></span>'
+            + '<span class="md-color-nombre">' + escHTML(c.nombre || "") + '</span>'
+            + '</div>';
+        }).join("");
+      } else { colBlock.hidden = true; }
+    }
+
+    // Versiones
+    var verWrap = $("[data-md-versiones]");
+    var verBlock = $("[data-md-block-versiones]");
+    if (verWrap && verBlock) {
+      if (m.versiones && m.versiones.length) {
+        verBlock.hidden = false;
+        verWrap.innerHTML = m.versiones.map(function (v) {
+          return '<span class="md-version-chip">' + escHTML(v) + '</span>';
+        }).join("");
+      } else { verBlock.hidden = true; }
+    }
+  }
+  function escAttr(s) { return String(s == null ? "" : s).replace(/"/g, "&quot;"); }
 
   /* ---- Carrusel de usados (home): chips de carrocería + flechas ---- */
   function initUsadosCarousel() {
@@ -1041,6 +1135,7 @@
     safe(initCountUp, "countUp");
     safe(initTilt, "tilt");
     safe(initCheryLineup, "cheryLineup");
+    safe(initModeloDetail, "modeloDetail");
     safe(initWhatsApp, "whatsapp");
     safe(initContactForm, "contactForm");
     safe(initMapFacades, "mapFacades");
