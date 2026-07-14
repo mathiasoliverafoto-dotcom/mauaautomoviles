@@ -7,7 +7,7 @@
 <link rel="icon" href="assets/img/logo-mark.svg">
 <script>
 /* Aplica el tema guardado (oscuro/claro/automático) antes de pintar, para que no haya parpadeo. */
-(function(){try{var t=localStorage.getItem("mauaTheme")||"auto";document.documentElement.setAttribute("data-theme",t==="auto"?(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light"):t);}catch(e){document.documentElement.setAttribute("data-theme","dark");}})();
+(function(){try{var t=localStorage.getItem("mauaTheme")||"auto";document.documentElement.setAttribute("data-theme",t);}catch(e){document.documentElement.setAttribute("data-theme","auto");}})();
 </script>
 <style>
 :root {
@@ -32,6 +32,10 @@
     --line: rgba(0,0,0,.10);
   }
 }
+/* Controles nativos (fecha, scrollbars) acompañan el tema */
+:root, :root[data-theme="dark"] { color-scheme: dark; }
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="auto"] { color-scheme: light dark; }
 *, *::before, *::after { box-sizing: border-box; margin: 0; }
 html { overflow-x: clip; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body { font-family: var(--font); background: var(--bg); color: var(--ink); min-height: 100vh; overflow-x: clip; width: 100%; max-width: 100%; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
@@ -1203,8 +1207,9 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   // ── Configuración ───────────────────
   window.setTheme=function(t){
     try{ localStorage.setItem("mauaTheme",t); }catch(e){}
-    var applied = t==="auto"?(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light"):t;
-    document.documentElement.setAttribute("data-theme",applied);
+    // "auto" se deja tal cual: el CSS con @media (prefers-color-scheme)
+    // sigue el sistema en vivo (incluido el horario claro/oscuro).
+    document.documentElement.setAttribute("data-theme",t);
     document.querySelectorAll("[data-theme-opt]").forEach(function(b){
       b.classList.toggle("is-active",b.dataset.themeOpt===t);
     });
