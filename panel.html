@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Panel — Mauá Automóviles</title>
 <link rel="icon" href="assets/img/logo-mark.svg">
 <script>
@@ -33,8 +33,8 @@
   }
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; }
-html { overflow-x: clip; }
-body { font-family: var(--font); background: var(--bg); color: var(--ink); min-height: 100vh; overflow-x: clip; width: 100%; max-width: 100%; }
+html { overflow-x: clip; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { font-family: var(--font); background: var(--bg); color: var(--ink); min-height: 100vh; overflow-x: clip; width: 100%; max-width: 100%; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 a { color: var(--red); text-decoration: none; }
 button { cursor: pointer; font-family: inherit; }
 input, select, textarea { font-family: inherit; font-size: .9rem; }
@@ -311,8 +311,8 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   .app { overflow-x: clip; width: 100%; max-width: 100%; flex-wrap: wrap; }
   .main, .section { overflow-x: clip; width: 100%; max-width: 100%; min-width: 0; }
   .login-wrap { width: 100%; max-width: 100%; }
-  .stats-row { display: grid !important; grid-template-columns: 1fr 1fr; gap: .6rem; }
-  .stat-card { min-width: 0 !important; width: 100%; }
+  .stats-row { display: grid !important; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: .6rem; }
+  .stat-card { min-width: 0 !important; width: 100%; overflow-wrap: anywhere; }
   [style*="min-width"] { min-width: 0 !important; }
   [style*="display:flex"], [style*="display: flex"] { max-width: 100%; box-sizing: border-box; }
   input, select, textarea { max-width: 100% !important; }
@@ -409,7 +409,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 @media (max-width: 400px) {
   .sidebar-nav button { font-size: .56rem; min-width: 0; padding: .5rem .15rem; }
   .stats-row { gap: .6rem; }
-  .stat-card { min-width: 100px; padding: .8rem 1rem; }
+  .stat-card { min-width: 0; padding: .8rem 1rem; }
 }
 </style>
 </head>
