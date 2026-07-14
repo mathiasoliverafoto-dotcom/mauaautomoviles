@@ -33,8 +33,8 @@
   }
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; }
-html { overflow-x: hidden; }
-body { font-family: var(--font); background: var(--bg); color: var(--ink); min-height: 100vh; overflow-x: hidden; width: 100%; }
+html { overflow-x: clip; }
+body { font-family: var(--font); background: var(--bg); color: var(--ink); min-height: 100vh; overflow-x: clip; width: 100%; max-width: 100%; }
 a { color: var(--red); text-decoration: none; }
 button { cursor: pointer; font-family: inherit; }
 input, select, textarea { font-family: inherit; font-size: .9rem; }
@@ -303,12 +303,13 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 .sidebar-nav .btn-more-mobile { display: none; }
 
 @media (max-width: 768px) {
-  /* iOS Safari ignora overflow-x:hidden en el viewport.
-     Solución: html fijo, body como scroll container real. */
-  html { position: fixed; overflow: hidden; width: 100%; height: 100%; }
-  body { overflow-x: hidden; overflow-y: scroll; width: 100%; height: 100%; -webkit-overflow-scrolling: touch; overscroll-behavior-x: none; }
-  .app { overflow-x: hidden; width: 100%; max-width: 100%; flex-wrap: wrap; }
-  .main, .section { overflow-x: hidden; width: 100%; max-width: 100%; min-width: 0; }
+  /* iOS Safari IGNORA overflow-x:hidden en html/body cuando un hijo tiene
+     margen negativo (ej: .table-wrap). overflow-x:clip SÍ lo respeta en iOS
+     16+: recorta de verdad sin crear una zona scrolleable lateral. */
+  html { overflow-x: clip; overflow-y: auto; width: 100%; max-width: 100%; }
+  body { overflow-x: clip; overflow-y: visible; width: 100%; max-width: 100%; overscroll-behavior-x: none; }
+  .app { overflow-x: clip; width: 100%; max-width: 100%; flex-wrap: wrap; }
+  .main, .section { overflow-x: clip; width: 100%; max-width: 100%; min-width: 0; }
   .login-wrap { width: 100%; max-width: 100%; }
   .stats-row { display: grid !important; grid-template-columns: 1fr 1fr; gap: .6rem; }
   .stat-card { min-width: 0 !important; width: 100%; }
