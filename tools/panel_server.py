@@ -677,7 +677,7 @@ def api_ventas_create():
 # ──────────────────────────────────────────────────────────────
 
 @app.route("/api/financiaciones", methods=["GET"])
-@require_roles("admin_general", "admin_sucursal")
+@require_roles("admin_general", "admin_sucursal", "vendedor")
 def api_financiaciones_list():
     fins = read_json("financiaciones.json")
     if session.get("rol") == "admin_sucursal":
@@ -688,7 +688,7 @@ def api_financiaciones_list():
     return jsonify(fins)
 
 @app.route("/api/financiaciones/<fid>/pagar", methods=["POST"])
-@require_roles("admin_general", "admin_sucursal")
+@require_roles("admin_general", "admin_sucursal", "vendedor")
 def api_financiaciones_pagar(fid):
     body = request.get_json(silent=True) or {}
     metodo = body.get("metodoPago", "efectivo")

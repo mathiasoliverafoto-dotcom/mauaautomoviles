@@ -1019,7 +1019,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   var PERMS = {
     admin_general:  { inicio:1, calculadora:1, vehiculos:1, clientes:1, personal:1, cobranzas:1, finanzas:1, config:1, borrarVeh:1, editarVeh:1 },
     admin_sucursal: { inicio:1, calculadora:1, vehiculos:1, clientes:1, cobranzas:1, finanzas:1, config:1, borrarVeh:1, editarVeh:1 },
-    vendedor:       { calculadora:1, vehiculos:1, clientes:1, config:1, editarVeh:1 },
+    vendedor:       { calculadora:1, vehiculos:1, clientes:1, cobranzas:1, config:1, editarVeh:1 },
     lavadero:       { vehiculos:1, config:1 }
   };
   function can(x){ return !!(PERMS[currentUser.rol]||PERMS.vendedor)[x]; }
@@ -2196,17 +2196,21 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       else if(acum>0){ estado="Parcial ("+fmtN(acum)+" de "+fmtN(c.valor)+")"; estClase="cb-estado-parcial"; }
       else if(c.vencimiento<hoy){ estado="Vencida"; estClase="cb-estado-vencida"; }
       else { estado="Pendiente"; estClase="cb-estado-pendiente"; }
-      var tr='<tr><td>'+c.numero+'</td><td>'+fmtD(c.vencimiento)+'</td><td>US$ '+fmtN(c.valor)+'</td><td class="'+estClase+'">'+estado+'</td><td>'+(c.pagada||acum>0?'US$ '+fmtN(acum):'—')+'</td><td>'+(c.fechaPago?fmtD(c.fechaPago):'—')+'</td></tr>';
+      var cobrador=c.usuarioCobro?esc(c.usuarioCobro):'—';
+      var fechaPago=c.fechaPago?fmtD(c.fechaPago):'—';
+      var metodo=c.metodoPago?metodoTxt(c.metodoPago):'—';
+      if(pagos.length===1){ cobrador=pagos[0].usuarioCobro?esc(pagos[0].usuarioCobro):'—'; fechaPago=fmtD(pagos[0].fecha); metodo=metodoTxt(pagos[0].metodoPago); }
+      var tr='<tr><td>'+c.numero+'</td><td>'+fmtD(c.vencimiento)+'</td><td>US$ '+fmtN(c.valor)+'</td><td class="'+estClase+'">'+estado+'</td><td>'+(c.pagada||acum>0?'US$ '+fmtN(acum):'—')+'</td><td>'+fechaPago+'</td><td>'+metodo+'</td><td>'+cobrador+'</td></tr>';
       if(pagos.length>1){
         pagos.forEach(function(p,i){
-          tr+='<tr class="cb-pago-row"><td></td><td colspan="5">Pago '+(i+1)+': US$ '+fmtN(p.monto)+' · '+fmtD(p.fecha)+' · '+metodoTxt(p.metodoPago)+(p.usuarioCobro?' · '+esc(p.usuarioCobro):'')+'</td></tr>';
+          tr+='<tr class="cb-pago-row"><td></td><td colspan="7">Pago '+(i+1)+': US$ '+fmtN(p.monto)+' · '+fmtD(p.fecha)+' · '+metodoTxt(p.metodoPago)+' · '+(p.usuarioCobro?esc(p.usuarioCobro):'—')+'</td></tr>';
         });
       }
       return tr;
     }).join("");
     var totalCuotas=f.cuotas.reduce(function(a,c){return a+c.valor;},0);
     return '<div class="cb-historial" id="cobHist-'+f.id+'">'+
-      '<table><thead><tr><th>#</th><th>Vencimiento</th><th>Valor</th><th>Estado</th><th>Cobrado</th><th>Fecha pago</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+      '<div class="table-wrap"><table><thead><tr><th>#</th><th>Vencimiento</th><th>Valor</th><th>Estado</th><th>Cobrado</th><th>Fecha pago</th><th>Forma</th><th>Cobrado por</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
       '<div style="text-align:right;font-size:.78rem;margin-top:.5rem;color:var(--ink-soft)">Total cobrado: US$ '+fmtN(totalPagado)+' / US$ '+fmtN(totalCuotas)+'</div>'+
     '</div>';
   }
