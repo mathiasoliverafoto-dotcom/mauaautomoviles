@@ -2132,11 +2132,31 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       parcialTxt+
       '<span style="font-size:.8rem;color:var(--ink-soft)">Cuota: US$ '+fmtN(resto)+'</span>'+
       '<label style="font-size:.78rem;color:var(--ink-soft)">Monto pagado</label>'+
-      '<input type="number" id="pagoMonto-'+suffix+'" min="0" step="1" value="'+resto+'" style="width:100px">'+
+      '<input type="number" id="pagoMonto-'+suffix+'" min="0" step="1" value="'+resto+'" style="width:100px" oninput="previewPago(\''+f.id+'\',\''+suffix+'\')">'+
+      '<span id="pagoPreview-'+suffix+'" style="font-size:.75rem;color:var(--ink-mute);width:100%"></span>'+
       '<button class="btn btn-success btn-sm" onclick="pagarCuota(\''+f.id+'\',\'efectivo\',\''+suffix+'\')">Efectivo</button>'+
       '<button class="btn btn-success btn-sm" onclick="pagarCuota(\''+f.id+'\',\'transferencia\',\''+suffix+'\')">Transferencia</button>'+
     '</div>';
   }
+  window.previewPago=function(fid,suffix){
+    var f=financiaciones.find(function(x){return x.id===fid;}); if(!f) return;
+    var input=document.getElementById("pagoMonto-"+suffix);
+    var monto=parseInt(input&&input.value||0);
+    var preview=document.getElementById("pagoPreview-"+suffix);
+    if(!preview) return;
+    var pendientes=f.cuotas.filter(function(c){return !c.pagada;});
+    if(monto<=0||!pendientes.length){preview.textContent="";return;}
+    var restante=monto, partes=[];
+    for(var i=0;i<pendientes.length&&restante>0;i++){
+      var rc=restoCuota(pendientes[i]);
+      var ap=Math.min(restante,rc);
+      if(ap<=0) continue;
+      if(ap>=rc) partes.push("Cuota "+pendientes[i].numero+": US$ "+fmtN(ap)+" (completa)");
+      else partes.push("Cuota "+pendientes[i].numero+": US$ "+fmtN(ap)+" (parcial, resta US$ "+fmtN(rc-ap)+")");
+      restante-=ap;
+    }
+    preview.textContent=partes.length>1?partes.join(" · "):"";
+  };
 
   // Se expone en window porque el onchange de los filtros la llama desde el HTML.
   window.renderCobranzas=function renderCobranzas(){

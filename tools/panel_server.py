@@ -695,34 +695,42 @@ def api_financiaciones_pagar(fid):
     financiaciones = read_json("financiaciones.json")
     for i, f in enumerate(financiaciones):
         if f["id"] == fid:
-            pendiente = next((c for c in f["cuotas"] if not c["pagada"]), None)
-            if not pendiente:
+            pendientes = [c for c in f["cuotas"] if not c["pagada"]]
+            if not pendientes:
                 return jsonify({"error": "No hay cuotas pendientes"}), 400
             monto_pagado = body.get("montoPagado")
             if monto_pagado is None:
-                monto_pagado = body.get("montoCobrado", pendiente["valor"])
-            monto_pagado = max(0.0, float(monto_pagado))
-            acumulado = float(pendiente.get("montoPagado", 0)) + monto_pagado
+                monto_pagado = body.get("montoCobrado", pendientes[0]["valor"])
+            restante = max(0.0, float(monto_pagado))
             fecha_pago = body.get("fecha", datetime.now().strftime("%Y-%m-%d"))
             suc_cobro = session.get("sucursal", "")
             usr_cobro = session.get("nombre") or session.get("user", "")
-            pagos = pendiente.get("pagos", [])
-            pagos.append({
-                "monto": round(monto_pagado),
-                "fecha": fecha_pago,
-                "metodoPago": metodo,
-                "sucursalCobro": suc_cobro,
-                "usuarioCobro": usr_cobro,
-            })
-            pendiente["pagos"] = pagos
-            pendiente["montoPagado"] = round(acumulado)
-            pendiente["montoCobrado"] = round(acumulado)
-            pendiente["metodoPago"] = metodo
-            pendiente["fechaPago"] = fecha_pago
-            pendiente["sucursalCobro"] = suc_cobro
-            pendiente["usuarioCobro"] = usr_cobro
-            if acumulado >= pendiente["valor"]:
-                pendiente["pagada"] = True
+            for cuota in pendientes:
+                if restante <= 0:
+                    break
+                resto_cuota = cuota["valor"] - float(cuota.get("montoPagado", 0))
+                aplicar = min(restante, resto_cuota)
+                if aplicar <= 0:
+                    continue
+                acumulado = float(cuota.get("montoPagado", 0)) + aplicar
+                pagos = cuota.get("pagos", [])
+                pagos.append({
+                    "monto": round(aplicar),
+                    "fecha": fecha_pago,
+                    "metodoPago": metodo,
+                    "sucursalCobro": suc_cobro,
+                    "usuarioCobro": usr_cobro,
+                })
+                cuota["pagos"] = pagos
+                cuota["montoPagado"] = round(acumulado)
+                cuota["montoCobrado"] = round(acumulado)
+                cuota["metodoPago"] = metodo
+                cuota["fechaPago"] = fecha_pago
+                cuota["sucursalCobro"] = suc_cobro
+                cuota["usuarioCobro"] = usr_cobro
+                if acumulado >= cuota["valor"]:
+                    cuota["pagada"] = True
+                restante -= aplicar
             write_json("financiaciones.json", financiaciones)
             return jsonify(f)
     return jsonify({"error": "Financiación no encontrada"}), 404
