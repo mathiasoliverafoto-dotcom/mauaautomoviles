@@ -43,11 +43,29 @@
     return diffDays >= 0 && diffDays <= 14;
   }
 
+  /* ---- Mapea el string de sucursal de un vehículo al waIntl del local
+     correspondiente. La sucursal se guarda como "Calle N, Ciudad", así
+     que buscamos por coincidencia parcial con locales[i].calle. Si no
+     encaja ninguna, cae al número principal (Sánchez / central). ---- */
+  function waIntlForSucursal(sucursal) {
+    var locales = (data.locales || []);
+    if (sucursal) {
+      for (var i = 0; i < locales.length; i++) {
+        var l = locales[i];
+        if (l.calle && sucursal.indexOf(l.calle) !== -1 && l.waIntl) return l.waIntl;
+      }
+    }
+    return "59891940049";
+  }
+  function waBaseFor(sucursal) {
+    return "https://wa.me/" + waIntlForSucursal(sucursal) + "?text=";
+  }
+
   /* ---- Genera el link de WhatsApp para un vehículo ---- */
   function vehWaHref(v) {
     var etiqueta = v.condicion === "usado" ? (v.anio + " (usado)") : "0 km";
     var msg = "Hola! Quiero informacion sobre " + v.marca + " " + v.modelo + " " + etiqueta;
-    return (data.whatsapp || "https://wa.me/59892550422") + "?text=" + encodeURIComponent(msg);
+    return waBaseFor(v.sucursal) + encodeURIComponent(msg);
   }
 
   /* ---- Etiqueta de estado (badge visible en la tarjeta) ----
@@ -290,7 +308,7 @@
 
       if (consultBtn) {
         var msg = "Hola! Quiero informacion sobre Chery " + modelo.nombre;
-        consultBtn.setAttribute("href", (data.whatsapp || "https://wa.me/59892550422") + "?text=" + encodeURIComponent(msg));
+        consultBtn.setAttribute("href", (data.whatsapp || "https://wa.me/59891940049") + "?text=" + encodeURIComponent(msg));
       }
     }
     function goCategory(i) {
@@ -375,7 +393,7 @@
       var msg = "Hola! Quiero información sobre " + m.nombre;
       if (color && color.nombre) msg += " (color " + color.nombre + ")";
       msg += ".";
-      return (data.whatsapp || "https://wa.me/59892550422") + "?text=" + encodeURIComponent(msg);
+      return (data.whatsapp || "https://wa.me/59891940049") + "?text=" + encodeURIComponent(msg);
     }
     function updateWaCtas() {
       var href = waHrefFor(colorActivo);
@@ -1025,7 +1043,10 @@
     }
 
     var etiqueta = esUsado ? (v.anio + " (usado)") : "0 km";
-    var waBase = (data.whatsapp || "https://wa.me/59892550422") + "?text=";
+    // El CTA "Me interesa!" dirige al WhatsApp de la sucursal donde el
+    // vehículo está publicado (waIntlForSucursal). El "share" comparte el
+    // link de la ficha por WhatsApp — sale también por esa sucursal.
+    var waBase = waBaseFor(v.sucursal);
     var ctaInteresa = $("[data-pdp-cta-interesa]");
     if (ctaInteresa) {
       var msgInteresa = "Hola! Me interesa el " + v.marca + " " + v.modelo + " " + etiqueta + ". ¿Sigue disponible?";
@@ -1070,7 +1091,7 @@
 
   /* ---- WhatsApp: añade el modelo al mensaje ---- */
   function initWhatsApp() {
-    var base = (data.whatsapp || "https://wa.me/59892550422") + "?text=";
+    var base = (data.whatsapp || "https://wa.me/59891940049") + "?text=";
     $$("[data-wa][data-model]").forEach(function (a) {
       var msg = "Hola! Quiero informacion sobre " + a.dataset.model;
       a.setAttribute("href", base + encodeURIComponent(msg));
@@ -1099,7 +1120,7 @@
       var waText = "Hola! Soy " + nombre + ". Telefono: " + tel +
                    (interes ? ". Me interesa: " + interes : "") +
                    (mensaje ? ". " + mensaje : "");
-      var waUrl = (data.whatsapp || "https://wa.me/59892550422") + "?text=" + encodeURIComponent(waText);
+      var waUrl = (data.whatsapp || "https://wa.me/59891940049") + "?text=" + encodeURIComponent(waText);
 
       /* Abrir WhatsApp de inmediato (dentro del gesto del usuario, evita bloqueo de pop-ups) */
       try { window.open(waUrl, "_blank", "noopener"); } catch (err) {}
@@ -1110,8 +1131,8 @@
       setTimeout(function () {
         form.classList.add("is-sent-check");
         if (msgOut) msgOut.textContent = first
-          ? (first + ", abrimos WhatsApp con tu consulta. Si no se abrió, escribinos al 092 550 422.")
-          : "Abrimos WhatsApp con tu consulta. Si no se abrió, escribinos al 092 550 422.";
+          ? (first + ", abrimos WhatsApp con tu consulta. Si no se abrió, escribinos al 091 940 049.")
+          : "Abrimos WhatsApp con tu consulta. Si no se abrió, escribinos al 091 940 049.";
         setTimeout(function () {
           form.classList.add("is-sent");
           success.setAttribute("aria-hidden", "false");
