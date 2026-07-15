@@ -156,6 +156,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 .veh-list-row:hover { border-color: rgba(255,255,255,.18); }
 .veh-list-row img { width: 56px; height: 40px; object-fit: contain; border-radius: 4px; background: var(--bg-3); }
 .veh-list-row .no-img { width: 56px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--bg-3); border-radius: 4px; color: var(--ink-mute); font-size: .6rem; }
+.cli-total-badge { font-size: .78rem; font-weight: 500; color: var(--ink-mute); margin-left: .4rem; letter-spacing: 0; }
 .cli-list { display: flex; flex-direction: column; gap: .5rem; }
 .cli-list-row { display: grid; grid-template-columns: 1.3fr 1fr 1fr .8fr auto; align-items: center; gap: .8rem; padding: .7rem .9rem; background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; font-size: .85rem; }
 .cli-list-row:hover { border-color: rgba(255,255,255,.18); }
@@ -620,7 +621,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     <!-- ═══ CLIENTES ═══ -->
     <div class="section" id="secClientes">
       <div class="main-header">
-        <h2>Clientes</h2>
+        <h2>Clientes <span class="cli-total-badge" id="cliTotal"></span></h2>
         <button class="btn btn-primary" onclick="openCliModal()">+ Nuevo cliente</button>
       </div>
       <div class="veh-filters" style="margin-bottom:1rem">
@@ -1799,6 +1800,8 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   window.renderClientes=function renderClientes(){
     var grid=document.getElementById("clientesGrid");
     var countEl=document.getElementById("cliCount");
+    var totalEl=document.getElementById("cliTotal");
+    if(totalEl) totalEl.textContent=clientes.length?("("+clientes.length+")"):"";
     if(!clientes.length){grid.innerHTML='<div class="no-sales">No hay clientes cargados</div>';if(countEl)countEl.textContent="";return;}
     var por=document.getElementById("cliBuscarPor").value;
     var q=(document.getElementById("cliBuscar").value||"").trim().toLowerCase();
