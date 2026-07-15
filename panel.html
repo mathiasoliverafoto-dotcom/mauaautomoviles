@@ -239,6 +239,18 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 .cobranza-venc .cb-valor { color: var(--ink-soft); font-size: .82rem; }
 .cobranza-actions { display: flex; gap: .5rem; }
 .cobranza-card.is-completa { opacity: .6; }
+.cobranza-info { cursor: pointer; }
+.cb-historial { display: none; width: 100%; margin-top: .4rem; }
+.cb-historial.is-open { display: block; }
+.cb-historial table { width: 100%; border-collapse: collapse; font-size: .78rem; }
+.cb-historial th { text-align: left; padding: .4rem .5rem; border-bottom: 2px solid var(--line); color: var(--ink-soft); font-weight: 600; }
+.cb-historial td { padding: .4rem .5rem; border-bottom: 1px solid var(--line); }
+.cb-historial .cb-pago-row { font-size: .72rem; color: var(--ink-soft); }
+.cb-historial .cb-pago-row td { padding: .25rem .5rem .25rem 1.5rem; border-bottom: none; }
+.cb-estado-pagada { color: var(--green-h, #16a34a); font-weight: 600; }
+.cb-estado-parcial { color: var(--amber, #d97706); font-weight: 600; }
+.cb-estado-pendiente { color: var(--ink-mute); }
+.cb-estado-vencida { color: var(--danger, #dc2626); font-weight: 600; }
 .btn-wa-mini { background: #25d366; color: #fff; padding: .5rem .8rem; border-radius: 8px; border: none; font-size: .8rem; font-weight: 600; display: inline-flex; align-items: center; gap: .3rem; text-decoration: none; }
 .btn-wa-mini.is-disabled { background: var(--bg-3); color: var(--ink-mute); cursor: not-allowed; }
 
@@ -2157,7 +2169,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       var badge=f._vencidas>0?'<span class="toma-tag" style="background:var(--danger,#dc2626)">'+f._vencidas+' cuota'+(f._vencidas>1?'s':'')+' vencida'+(f._vencidas>1?'s':'')+'</span>':'';
       var parcialBadge=(pendiente.montoPagado>0)?'<span class="toma-tag" style="background:var(--amber)">pago parcial</span>':'';
       return '<div class="cobranza-card">'+
-        '<div class="cobranza-info">'+
+        '<div class="cobranza-info" onclick="toggleCobHistorial(\''+f.id+'\')" title="Ver historial de cuotas">'+
           '<div class="cb-cliente">'+esc(f.clienteNombre)+badge+parcialBadge+'</div>'+
           '<div class="cb-veh">'+esc(f.vehiculo)+'</div>'+
         '</div>'+
@@ -2168,9 +2180,40 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
           '<button class="btn btn-outline btn-sm" onclick="togglePagoBox(\''+f.id+'\')">Registrar pago</button>'+
         '</div>'+
         pagoBoxHTML(f,pendiente,f.id)+
+        cobHistorialHTML(f)+
       '</div>';
     }).join("");
   }
+  function cobHistorialHTML(f){
+    var hoy=today();
+    var totalPagado=0;
+    var rows=f.cuotas.map(function(c){
+      var pagos=c.pagos||[];
+      var acum=c.montoPagado||0;
+      totalPagado+=acum;
+      var estado,estClase;
+      if(c.pagada){ estado="Pagada"; estClase="cb-estado-pagada"; }
+      else if(acum>0){ estado="Parcial ("+fmtN(acum)+" de "+fmtN(c.valor)+")"; estClase="cb-estado-parcial"; }
+      else if(c.vencimiento<hoy){ estado="Vencida"; estClase="cb-estado-vencida"; }
+      else { estado="Pendiente"; estClase="cb-estado-pendiente"; }
+      var tr='<tr><td>'+c.numero+'</td><td>'+fmtD(c.vencimiento)+'</td><td>US$ '+fmtN(c.valor)+'</td><td class="'+estClase+'">'+estado+'</td><td>'+(c.pagada||acum>0?'US$ '+fmtN(acum):'—')+'</td><td>'+(c.fechaPago?fmtD(c.fechaPago):'—')+'</td></tr>';
+      if(pagos.length>1){
+        pagos.forEach(function(p,i){
+          tr+='<tr class="cb-pago-row"><td></td><td colspan="5">Pago '+(i+1)+': US$ '+fmtN(p.monto)+' · '+fmtD(p.fecha)+' · '+metodoTxt(p.metodoPago)+(p.usuarioCobro?' · '+esc(p.usuarioCobro):'')+'</td></tr>';
+        });
+      }
+      return tr;
+    }).join("");
+    var totalCuotas=f.cuotas.reduce(function(a,c){return a+c.valor;},0);
+    return '<div class="cb-historial" id="cobHist-'+f.id+'">'+
+      '<table><thead><tr><th>#</th><th>Vencimiento</th><th>Valor</th><th>Estado</th><th>Cobrado</th><th>Fecha pago</th></tr></thead><tbody>'+rows+'</tbody></table>'+
+      '<div style="text-align:right;font-size:.78rem;margin-top:.5rem;color:var(--ink-soft)">Total cobrado: US$ '+fmtN(totalPagado)+' / US$ '+fmtN(totalCuotas)+'</div>'+
+    '</div>';
+  }
+  window.toggleCobHistorial=function(id){
+    var el=document.getElementById("cobHist-"+id);
+    if(el) el.classList.toggle("is-open");
+  };
   window.togglePagoBox=function(id){
     var box=document.getElementById("pagoBox-"+id);
     if(!box)return;
