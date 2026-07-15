@@ -2126,37 +2126,68 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     return Math.max(0, c.valor - (c.montoPagado||0));
   }
   function pagoBoxHTML(f,pendiente,suffix){
-    var resto=restoCuota(pendiente);
-    var parcialTxt=(pendiente.montoPagado>0)?'<span style="font-size:.75rem;color:var(--amber)">Pagado parcialmente US$ '+fmtN(pendiente.montoPagado)+' · </span>':'';
-    return '<div class="pago-box" id="pagoBox-'+suffix+'" style="display:none;width:100%;margin-top:.6rem;gap:.5rem;justify-content:flex-end;align-items:center;flex-wrap:wrap">'+
-      parcialTxt+
-      '<span style="font-size:.8rem;color:var(--ink-soft)">Cuota: US$ '+fmtN(resto)+'</span>'+
-      '<label style="font-size:.78rem;color:var(--ink-soft)">Monto pagado</label>'+
-      '<input type="number" id="pagoMonto-'+suffix+'" min="0" step="1" value="'+resto+'" style="width:100px" oninput="previewPago(\''+f.id+'\',\''+suffix+'\')">'+
-      '<span id="pagoPreview-'+suffix+'" style="font-size:.75rem;color:var(--ink-mute);width:100%"></span>'+
-      '<button class="btn btn-success btn-sm" onclick="pagarCuota(\''+f.id+'\',\'efectivo\',\''+suffix+'\')">Efectivo</button>'+
-      '<button class="btn btn-success btn-sm" onclick="pagarCuota(\''+f.id+'\',\'transferencia\',\''+suffix+'\')">Transferencia</button>'+
+    var pendientes=f.cuotas.filter(function(c){return !c.pagada;});
+    var hoy=today();
+    var rows=pendientes.map(function(c,i){
+      var rc=restoCuota(c);
+      var vencida=c.vencimiento<hoy;
+      var parcial=c.montoPagado>0;
+      var estadoTxt=vencida?'<span style="color:var(--danger,#dc2626);font-size:.72rem"> Vencida</span>':parcial?'<span style="color:var(--amber);font-size:.72rem"> Parcial</span>':'';
+      return '<label class="cb-pago-cuota-row" style="display:flex;align-items:center;gap:.6rem;padding:.35rem 0;border-bottom:1px solid var(--line);font-size:.82rem;cursor:pointer">'+
+        '<input type="checkbox" class="cb-pago-check" data-idx="'+i+'" data-valor="'+rc+'" '+(i===0?'checked':'')+' onchange="cobSelCuota(\''+f.id+'\',\''+suffix+'\',this)">'+
+        '<span style="min-width:3.5rem">Cuota '+c.numero+'</span>'+
+        '<span style="color:var(--ink-mute);min-width:5.5rem">'+fmtD(c.vencimiento)+'</span>'+
+        '<span style="font-weight:600">US$ '+fmtN(rc)+'</span>'+
+        (parcial?'<span style="font-size:.72rem;color:var(--ink-mute)">(pagado '+fmtN(c.montoPagado)+' de '+fmtN(c.valor)+')</span>':'')+
+        estadoTxt+
+      '</label>';
+    }).join("");
+    var primerResto=restoCuota(pendientes[0]);
+    return '<div class="pago-box" id="pagoBox-'+suffix+'" style="display:none;width:100%;margin-top:.6rem;flex-direction:column;gap:.4rem">'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.2rem">'+
+        '<span style="font-size:.82rem;font-weight:600;color:var(--ink)">Seleccionar cuotas a pagar</span>'+
+        '<label style="font-size:.78rem;color:var(--ink-soft);cursor:pointer;display:flex;align-items:center;gap:.3rem">'+
+          '<input type="checkbox" id="cobSelAll-'+suffix+'" onchange="cobToggleAll(\''+f.id+'\',\''+suffix+'\',this.checked)"'+(pendientes.length===1?' checked':'')+'>Todas ('+pendientes.length+')'+
+        '</label>'+
+      '</div>'+
+      '<div style="max-height:200px;overflow-y:auto">'+rows+'</div>'+
+      '<div style="display:flex;align-items:center;gap:.8rem;margin-top:.4rem;flex-wrap:wrap;justify-content:flex-end">'+
+        '<span style="font-size:.85rem;font-weight:700" id="cobTotal-'+suffix+'">Total: US$ '+fmtN(primerResto)+'</span>'+
+        '<button class="btn btn-success btn-sm" onclick="pagarCuota(\''+f.id+'\',\'efectivo\',\''+suffix+'\')">Efectivo</button>'+
+        '<button class="btn btn-success btn-sm" onclick="pagarCuota(\''+f.id+'\',\'transferencia\',\''+suffix+'\')">Transferencia</button>'+
+      '</div>'+
     '</div>';
   }
-  window.previewPago=function(fid,suffix){
-    var f=financiaciones.find(function(x){return x.id===fid;}); if(!f) return;
-    var input=document.getElementById("pagoMonto-"+suffix);
-    var monto=parseInt(input&&input.value||0);
-    var preview=document.getElementById("pagoPreview-"+suffix);
-    if(!preview) return;
-    var pendientes=f.cuotas.filter(function(c){return !c.pagada;});
-    if(monto<=0||!pendientes.length){preview.textContent="";return;}
-    var restante=monto, partes=[];
-    for(var i=0;i<pendientes.length&&restante>0;i++){
-      var rc=restoCuota(pendientes[i]);
-      var ap=Math.min(restante,rc);
-      if(ap<=0) continue;
-      if(ap>=rc) partes.push("Cuota "+pendientes[i].numero+": US$ "+fmtN(ap)+" (completa)");
-      else partes.push("Cuota "+pendientes[i].numero+": US$ "+fmtN(ap)+" (parcial, resta US$ "+fmtN(rc-ap)+")");
-      restante-=ap;
+  window.cobSelCuota=function(fid,suffix,cb){
+    var box=document.getElementById("pagoBox-"+suffix);
+    if(!box) return;
+    var checks=box.querySelectorAll(".cb-pago-check");
+    var idx=parseInt(cb.dataset.idx);
+    if(cb.checked){
+      for(var i=0;i<=idx;i++) checks[i].checked=true;
+    } else {
+      for(var i=idx;i<checks.length;i++) checks[i].checked=false;
     }
-    preview.textContent=partes.length>1?partes.join(" · "):"";
+    cobUpdateTotal(suffix,box);
   };
+  window.cobToggleAll=function(fid,suffix,checked){
+    var box=document.getElementById("pagoBox-"+suffix);
+    if(!box) return;
+    var checks=box.querySelectorAll(".cb-pago-check");
+    for(var i=0;i<checks.length;i++) checks[i].checked=checked;
+    cobUpdateTotal(suffix,box);
+  };
+  function cobUpdateTotal(suffix,box){
+    var checks=box.querySelectorAll(".cb-pago-check");
+    var total=0, checkedCount=0;
+    for(var i=0;i<checks.length;i++){
+      if(checks[i].checked){ total+=parseFloat(checks[i].dataset.valor); checkedCount++; }
+    }
+    var lbl=document.getElementById("cobTotal-"+suffix);
+    if(lbl) lbl.textContent="Total: US$ "+fmtN(total)+(checkedCount>1?" ("+checkedCount+" cuotas)":"");
+    var allCheck=document.getElementById("cobSelAll-"+suffix);
+    if(allCheck) allCheck.checked=(checkedCount===checks.length);
+  }
 
   // Se expone en window porque el onchange de los filtros la llama desde el HTML.
   window.renderCobranzas=function renderCobranzas(){
@@ -2183,18 +2214,24 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     if(!lista.length){wrap.innerHTML='<div class="no-sales">'+(soloVencidas?"No hay cuotas vencidas.":"No hay financiaciones activas")+'</div>';return;}
     wrap.innerHTML=lista.map(function(f){
       var pagadas=f.cuotas.filter(function(c){return c.pagada;}).length;
-      var pendiente=f.cuotas.find(function(c){return !c.pagada;});
+      var pendientes=f.cuotas.filter(function(c){return !c.pagada;});
+      var pendiente=pendientes[0];
       var resto=restoCuota(pendiente);
+      var totalPend=pendientes.reduce(function(a,c){return a+restoCuota(c);},0);
       var msg="Hola "+f.clienteNombre+"! Te recordamos que el "+fmtFechaLarga(pendiente.vencimiento)+" vence tu cuota de US$ "+fmtN(resto)+" correspondiente a tu compra en Mauá Automóviles. ¡Muchas gracias por confiar en nosotros! 🚗";
       var badge=f._vencidas>0?'<span class="toma-tag" style="background:var(--danger,#dc2626)">'+f._vencidas+' cuota'+(f._vencidas>1?'s':'')+' vencida'+(f._vencidas>1?'s':'')+'</span>':'';
-      var parcialBadge=(pendiente.montoPagado>0)?'<span class="toma-tag" style="background:var(--amber)">pago parcial</span>':'';
+      var parcialBadge=pendientes.some(function(c){return c.montoPagado>0;})?'<span class="toma-tag" style="background:var(--amber)">pago parcial</span>':'';
       return '<div class="cobranza-card">'+
         '<div class="cobranza-info" onclick="toggleCobHistorial(\''+f.id+'\')" title="Ver historial de cuotas">'+
           '<div class="cb-cliente">'+esc(f.clienteNombre)+badge+parcialBadge+'</div>'+
           '<div class="cb-veh">'+esc(f.vehiculo)+'</div>'+
         '</div>'+
         '<div class="cobranza-prog">'+pagadas+'/'+f.cantidadCuotas+' cuotas</div>'+
-        '<div class="cobranza-venc"><div class="cb-fecha">'+fmtD(pendiente.vencimiento)+'</div><div class="cb-valor">US$ '+fmtN(resto)+(pendiente.montoPagado>0?' <span style="font-size:.72rem;color:var(--ink-mute)">(pagado '+fmtN(pendiente.montoPagado)+' de '+fmtN(pendiente.valor)+')</span>':'')+'</div></div>'+
+        '<div class="cobranza-venc">'+
+          '<div class="cb-fecha">Prox: '+fmtD(pendiente.vencimiento)+'</div>'+
+          '<div class="cb-valor">Prox: US$ '+fmtN(resto)+'</div>'+
+          (pendientes.length>1?'<div style="font-size:.72rem;color:var(--ink-mute)">Pendiente total: US$ '+fmtN(totalPend)+' ('+pendientes.length+' cuotas)</div>':'')+
+        '</div>'+
         '<div class="cobranza-actions">'+
           waBtnHTML(f.clienteTelefono,msg)+
           '<button class="btn btn-outline btn-sm" onclick="togglePagoBox(\''+f.id+'\')">Registrar pago</button>'+
@@ -2245,12 +2282,17 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   };
   window.pagarCuota=function(id,metodo,suffix){
     var f=financiaciones.find(function(x){return x.id===id;});
-    var pendiente=f?f.cuotas.find(function(c){return !c.pagada;}):null;
-    if(!pendiente){toast("No hay cuotas pendientes","err");return;}
-    var input=document.getElementById("pagoMonto-"+(suffix!=null?suffix:id));
-    var monto=input?Math.max(0,parseInt(input.value||0)):restoCuota(pendiente);
-    if(monto<=0){toast("Ingresá un monto mayor a 0","err");return;}
-    api("/api/financiaciones/"+id+"/pagar",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({metodoPago:metodo,montoPagado:monto})}).then(function(){loadAll();toast("Pago registrado");}).catch(function(e){toast(e.message,"err");});
+    if(!f){toast("Financiación no encontrada","err");return;}
+    var box=document.getElementById("pagoBox-"+(suffix!=null?suffix:id));
+    var monto=0;
+    if(box){
+      var checks=box.querySelectorAll(".cb-pago-check");
+      for(var i=0;i<checks.length;i++){
+        if(checks[i].checked) monto+=parseFloat(checks[i].dataset.valor);
+      }
+    }
+    if(monto<=0){toast("Seleccioná al menos una cuota","err");return;}
+    api("/api/financiaciones/"+id+"/pagar",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({metodoPago:metodo,montoPagado:Math.round(monto)})}).then(function(){loadAll();toast("Pago registrado");}).catch(function(e){toast(e.message,"err");});
   };
 
   // ── Inicio (dashboard) ──────────────
