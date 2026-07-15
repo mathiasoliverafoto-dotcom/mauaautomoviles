@@ -641,6 +641,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     <div class="section" id="secCobranzas">
       <div class="main-header"><h2>Cobranzas</h2></div>
       <div class="veh-filters" style="margin-bottom:1rem">
+        <input type="text" id="cobBuscar" placeholder="Buscar cliente..." oninput="renderCobranzas()" style="flex:1 1 180px;max-width:280px">
         <div class="form-toggle" style="padding-top:0"><input type="checkbox" id="cobSoloVencidas" onchange="renderCobranzas()"><label for="cobSoloVencidas">Solo cuotas vencidas</label></div>
         <select id="cobOrden" onchange="renderCobranzas()">
           <option value="venc">Ordenar por próximo vencimiento</option>
@@ -2166,6 +2167,8 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     activas.forEach(function(f){
       f._vencidas=f.cuotas.filter(function(c){return !c.pagada && c.vencimiento<hoy;}).length;
     });
+    var cobQ=(document.getElementById("cobBuscar").value||"").toLowerCase().trim();
+    if(cobQ) activas=activas.filter(function(f){return (f.clienteNombre||"").toLowerCase().indexOf(cobQ)!==-1;});
     var soloVencidas=document.getElementById("cobSoloVencidas").checked;
     var lista=soloVencidas?activas.filter(function(f){return f._vencidas>0;}):activas;
     var orden=document.getElementById("cobOrden").value;
