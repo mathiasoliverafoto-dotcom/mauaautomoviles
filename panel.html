@@ -2110,54 +2110,21 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     var meses=["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
     var p=iso.split("-"); return parseInt(p[2],10)+" de "+meses[parseInt(p[1],10)-1];
   }
-  function interesCuota(f,c){
-    var capitalCuota=f.cantidadCuotas?f.montoTotal/f.cantidadCuotas:0;
-    return Math.max(0,c.valor-capitalCuota);
-  }
-  // Tasa mensual con la que se pactó la financiación (%). Si no está guardada
-  // (registros viejos) se asume el 1,5% por defecto.
-  function tasaBase(f){
-    var r=(f.tasaInteres!=null?f.tasaInteres:1.5);
-    return r>0?r:0;
-  }
-  // La cuota que se muestra ya incluye el interés a la tasa pactada (1,5% por
-  // defecto). Revirtiendo la fórmula francesa obtenemos el capital implícito,
-  // de modo que el campo arranca en la tasa base (cuota tal cual) y, al mover
-  // la tasa, "A cobrar" sube o baja:
-  //   tasa = tasaBase → cuota completa (como está cargada)
-  //   tasa = 0        → sólo el capital (interés totalmente quitado)
-  function datosCuota(f,c){
-    var base=tasaBase(f);
-    var n=f.cantidadCuotas||1;
-    var r=base/100;
-    // Principal que, a la tasa base, produce esta cuota (sistema francés).
-    var factor=r>0?(1-Math.pow(1+r,-n))/r:n;
-    var principal=c.valor*factor;
-    return {base:base,n:n,principal:principal,capital:principal/n};
-  }
-  // Monto a cobrar recalculando la cuota francesa a la tasa aplicada.
-  function montoACobrar(f,c,tasaAplicada){
-    var d=datosCuota(f,c);
-    if(d.base<=0) return c.valor;
-    return Math.round(Math.max(0,cuotaFija(d.principal,d.n,tasaAplicada/100)));
+  function restoCuota(c){
+    return Math.max(0, c.valor - (c.montoPagado||0));
   }
   function pagoBoxHTML(f,pendiente,suffix){
-    var d=datosCuota(f,pendiente);
+    var resto=restoCuota(pendiente);
+    var parcialTxt=(pendiente.montoPagado>0)?'<span style="font-size:.75rem;color:var(--amber)">Pagado parcialmente US$ '+fmtN(pendiente.montoPagado)+' · </span>':'';
     return '<div class="pago-box" id="pagoBox-'+suffix+'" style="display:none;width:100%;margin-top:.6rem;gap:.5rem;justify-content:flex-end;align-items:center;flex-wrap:wrap">'+
-      '<label style="font-size:.78rem;color:var(--ink-soft)">Interés aplicado (%)</label>'+
-      '<input type="number" id="pagoDesc-'+suffix+'" min="0" max="20" step="0.1" value="'+d.base+'" style="width:72px" oninput="updatePagoPreview(\''+f.id+'\',\''+suffix+'\')">'+
-      '<span id="pagoPreview-'+suffix+'" style="font-size:.8rem;color:var(--ink-soft);min-width:130px;text-align:right">A cobrar: US$ '+fmtN(pendiente.valor)+'</span>'+
+      parcialTxt+
+      '<span style="font-size:.8rem;color:var(--ink-soft)">Cuota: US$ '+fmtN(resto)+'</span>'+
+      '<label style="font-size:.78rem;color:var(--ink-soft)">Monto pagado</label>'+
+      '<input type="number" id="pagoMonto-'+suffix+'" min="0" step="1" value="'+resto+'" style="width:100px">'+
       '<button class="btn btn-success btn-sm" onclick="pagarCuota(\''+f.id+'\',\'efectivo\',\''+suffix+'\')">Efectivo</button>'+
       '<button class="btn btn-success btn-sm" onclick="pagarCuota(\''+f.id+'\',\'transferencia\',\''+suffix+'\')">Transferencia</button>'+
     '</div>';
   }
-  window.updatePagoPreview=function(fid,suffix){
-    var f=financiaciones.find(function(x){return x.id===fid;}); if(!f) return;
-    var pendiente=f.cuotas.find(function(c){return !c.pagada;}); if(!pendiente) return;
-    var input=document.getElementById("pagoDesc-"+suffix);
-    var tasa=Math.max(0,parseFloat((input&&input.value)||0));
-    document.getElementById("pagoPreview-"+suffix).textContent="A cobrar: US$ "+fmtN(montoACobrar(f,pendiente,tasa));
-  };
 
   // Se expone en window porque el onchange de los filtros la llama desde el HTML.
   window.renderCobranzas=function renderCobranzas(){
@@ -2185,15 +2152,17 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     wrap.innerHTML=lista.map(function(f){
       var pagadas=f.cuotas.filter(function(c){return c.pagada;}).length;
       var pendiente=f.cuotas.find(function(c){return !c.pagada;});
-      var msg="Hola "+f.clienteNombre+"! Te recordamos que el "+fmtFechaLarga(pendiente.vencimiento)+" vence tu cuota de US$ "+fmtN(pendiente.valor)+" correspondiente a tu compra en Mauá Automóviles. ¡Muchas gracias por confiar en nosotros! 🚗";
+      var resto=restoCuota(pendiente);
+      var msg="Hola "+f.clienteNombre+"! Te recordamos que el "+fmtFechaLarga(pendiente.vencimiento)+" vence tu cuota de US$ "+fmtN(resto)+" correspondiente a tu compra en Mauá Automóviles. ¡Muchas gracias por confiar en nosotros! 🚗";
       var badge=f._vencidas>0?'<span class="toma-tag" style="background:var(--danger,#dc2626)">'+f._vencidas+' cuota'+(f._vencidas>1?'s':'')+' vencida'+(f._vencidas>1?'s':'')+'</span>':'';
+      var parcialBadge=(pendiente.montoPagado>0)?'<span class="toma-tag" style="background:var(--amber)">pago parcial</span>':'';
       return '<div class="cobranza-card">'+
         '<div class="cobranza-info">'+
-          '<div class="cb-cliente">'+esc(f.clienteNombre)+badge+'</div>'+
+          '<div class="cb-cliente">'+esc(f.clienteNombre)+badge+parcialBadge+'</div>'+
           '<div class="cb-veh">'+esc(f.vehiculo)+'</div>'+
         '</div>'+
         '<div class="cobranza-prog">'+pagadas+'/'+f.cantidadCuotas+' cuotas</div>'+
-        '<div class="cobranza-venc"><div class="cb-fecha">'+fmtD(pendiente.vencimiento)+'</div><div class="cb-valor">US$ '+fmtN(pendiente.valor)+'</div></div>'+
+        '<div class="cobranza-venc"><div class="cb-fecha">'+fmtD(pendiente.vencimiento)+'</div><div class="cb-valor">US$ '+fmtN(resto)+(pendiente.montoPagado>0?' <span style="font-size:.72rem;color:var(--ink-mute)">(pagado '+fmtN(pendiente.montoPagado)+' de '+fmtN(pendiente.valor)+')</span>':'')+'</div></div>'+
         '<div class="cobranza-actions">'+
           waBtnHTML(f.clienteTelefono,msg)+
           '<button class="btn btn-outline btn-sm" onclick="togglePagoBox(\''+f.id+'\')">Registrar pago</button>'+
@@ -2210,10 +2179,11 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   window.pagarCuota=function(id,metodo,suffix){
     var f=financiaciones.find(function(x){return x.id===id;});
     var pendiente=f?f.cuotas.find(function(c){return !c.pagada;}):null;
-    var input=document.getElementById("pagoDesc-"+(suffix!=null?suffix:id));
-    var tasa=input?Math.max(0,parseFloat(input.value||0)):0;
-    var monto=(f&&pendiente)?montoACobrar(f,pendiente,tasa):(pendiente?pendiente.valor:0);
-    api("/api/financiaciones/"+id+"/pagar",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({metodoPago:metodo,montoCobrado:monto,tasaAplicada:tasa})}).then(function(){loadAll();toast("Pago registrado");}).catch(function(e){toast(e.message,"err");});
+    if(!pendiente){toast("No hay cuotas pendientes","err");return;}
+    var input=document.getElementById("pagoMonto-"+(suffix!=null?suffix:id));
+    var monto=input?Math.max(0,parseInt(input.value||0)):restoCuota(pendiente);
+    if(monto<=0){toast("Ingresá un monto mayor a 0","err");return;}
+    api("/api/financiaciones/"+id+"/pagar",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({metodoPago:metodo,montoPagado:monto})}).then(function(){loadAll();toast("Pago registrado");}).catch(function(e){toast(e.message,"err");});
   };
 
   // ── Inicio (dashboard) ──────────────
@@ -2230,7 +2200,15 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     var ingresoCuotas=0, cobrosHoy=0;
     financiaciones.forEach(function(f){
       f.cuotas.forEach(function(c){
-        if(c.pagada && c.fechaPago===hoy){
+        var pagos=c.pagos||[];
+        if(pagos.length){
+          pagos.forEach(function(p){
+            if(p.fecha===hoy){
+              if(esSucursal && (p.sucursalCobro||"")!==currentUser.sucursal) return;
+              ingresoCuotas+=p.monto; cobrosHoy++;
+            }
+          });
+        } else if(c.pagada && c.fechaPago===hoy){
           if(esSucursal && (c.sucursalCobro||"")!==currentUser.sucursal) return;
           ingresoCuotas+=(c.montoCobrado!=null?c.montoCobrado:c.valor); cobrosHoy++;
         }
@@ -2262,11 +2240,12 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     else {
       vwrap.innerHTML=vencen.map(function(it){
         var f=it.f, c=it.c;
-        var msg="Hola "+f.clienteNombre+"! Te recordamos que hoy vence tu cuota de US$ "+fmtN(c.valor)+" correspondiente a tu compra en Mauá Automóviles. ¡Muchas gracias por confiar en nosotros! 🚗";
+        var restoIni=restoCuota(c);
+        var msg="Hola "+f.clienteNombre+"! Te recordamos que hoy vence tu cuota de US$ "+fmtN(restoIni)+" correspondiente a tu compra en Mauá Automóviles. ¡Muchas gracias por confiar en nosotros! 🚗";
         return '<div class="cobranza-card">'+
-          '<div class="cobranza-info"><div class="cb-cliente">'+esc(f.clienteNombre)+'</div><div class="cb-veh">'+esc(f.vehiculo)+'</div></div>'+
+          '<div class="cobranza-info"><div class="cb-cliente">'+esc(f.clienteNombre)+(c.montoPagado>0?'<span class="toma-tag" style="background:var(--amber)">pago parcial</span>':'')+'</div><div class="cb-veh">'+esc(f.vehiculo)+'</div></div>'+
           '<div class="cobranza-prog">cuota '+c.numero+'/'+f.cantidadCuotas+'</div>'+
-          '<div class="cobranza-venc"><div class="cb-valor">US$ '+fmtN(c.valor)+'</div></div>'+
+          '<div class="cobranza-venc"><div class="cb-valor">US$ '+fmtN(restoIni)+'</div></div>'+
           '<div class="cobranza-actions">'+
             waBtnHTML(f.clienteTelefono,msg)+
             '<button class="btn btn-outline btn-sm" onclick="togglePagoBox(\'ini-'+f.id+'\')">Registrar pago</button>'+
@@ -2341,7 +2320,17 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     financiaciones.forEach(function(f){
       var venta=ventaById[f.ventaId]||{};
       f.cuotas.forEach(function(c){
-        if(c.pagada){
+        var pagos=c.pagos||[];
+        if(pagos.length){
+          pagos.forEach(function(p){
+            out.push({
+              fecha:p.fecha, monto:p.monto, metodoPago:p.metodoPago,
+              sucursal:p.sucursalCobro||venta.sucursal||"", vendedorId:venta.vendedorId||"", vendedorNombre:venta.vendedorNombre||"",
+              clienteNombre:f.clienteNombre, vehiculo:f.vehiculo, numero:c.numero, cantidadCuotas:f.cantidadCuotas,
+              interesCobrado:0
+            });
+          });
+        } else if(c.pagada){
           out.push({
             fecha:c.fechaPago, monto:(c.montoCobrado!=null?c.montoCobrado:c.valor), metodoPago:c.metodoPago,
             sucursal:venta.sucursal||"", vendedorId:venta.vendedorId||"", vendedorNombre:venta.vendedorNombre||"",

@@ -698,38 +698,31 @@ def api_financiaciones_pagar(fid):
             pendiente = next((c for c in f["cuotas"] if not c["pagada"]), None)
             if not pendiente:
                 return jsonify({"error": "No hay cuotas pendientes"}), 400
-            # El frontend calcula el monto a cobrar según la tasa de interés
-            # aplicada al momento del cobro y lo envía ya resuelto. Si no viene
-            # (compatibilidad), se cobra el valor original de la cuota.
-            # La cuota cargada ya incluye el interés a la tasa pactada (1,5% por
-            # defecto): revertimos la fórmula francesa para obtener el capital
-            # implícito y así medir el interés efectivamente cobrado.
-            n = f.get("cantidadCuotas") or 1
-            base = f.get("tasaInteres")
-            base = 1.5 if base is None else float(base)
-            if base > 0:
-                r = base / 100.0
-                factor = (1 - (1 + r) ** -n) / r
-                capital_cuota = (pendiente["valor"] * factor) / n
-            else:
-                capital_cuota = pendiente["valor"]
-            monto_cobrado = body.get("montoCobrado")
-            if monto_cobrado is None:
-                monto_cobrado = pendiente["valor"]
-            monto_cobrado = max(0.0, float(monto_cobrado))
-            tasa_aplicada = body.get("tasaAplicada")
-            pendiente["pagada"] = True
-            pendiente["fechaPago"] = body.get("fecha", datetime.now().strftime("%Y-%m-%d"))
+            monto_pagado = body.get("montoPagado")
+            if monto_pagado is None:
+                monto_pagado = body.get("montoCobrado", pendiente["valor"])
+            monto_pagado = max(0.0, float(monto_pagado))
+            acumulado = float(pendiente.get("montoPagado", 0)) + monto_pagado
+            fecha_pago = body.get("fecha", datetime.now().strftime("%Y-%m-%d"))
+            suc_cobro = session.get("sucursal", "")
+            usr_cobro = session.get("nombre") or session.get("user", "")
+            pagos = pendiente.get("pagos", [])
+            pagos.append({
+                "monto": round(monto_pagado),
+                "fecha": fecha_pago,
+                "metodoPago": metodo,
+                "sucursalCobro": suc_cobro,
+                "usuarioCobro": usr_cobro,
+            })
+            pendiente["pagos"] = pagos
+            pendiente["montoPagado"] = round(acumulado)
+            pendiente["montoCobrado"] = round(acumulado)
             pendiente["metodoPago"] = metodo
-            pendiente["montoCobrado"] = round(monto_cobrado)
-            if tasa_aplicada is not None:
-                pendiente["tasaAplicada"] = float(tasa_aplicada)
-            # Interés cobrado por encima del capital de la cuota (para reportes).
-            pendiente["interesCobrado"] = round(max(0.0, monto_cobrado - capital_cuota))
-            # Sucursal donde se cobró (el cliente puede pagar en cualquiera).
-            # Sirve para atribuir el ingreso al admin de esa sucursal.
-            pendiente["sucursalCobro"] = session.get("sucursal", "")
-            pendiente["usuarioCobro"] = session.get("nombre") or session.get("user", "")
+            pendiente["fechaPago"] = fecha_pago
+            pendiente["sucursalCobro"] = suc_cobro
+            pendiente["usuarioCobro"] = usr_cobro
+            if acumulado >= pendiente["valor"]:
+                pendiente["pagada"] = True
             write_json("financiaciones.json", financiaciones)
             return jsonify(f)
     return jsonify({"error": "Financiación no encontrada"}), 404
