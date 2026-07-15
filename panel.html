@@ -2158,7 +2158,8 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     document.getElementById("pagoPreview-"+suffix).textContent="A cobrar: US$ "+fmtN(montoACobrar(f,pendiente,tasa));
   };
 
-  function renderCobranzas(){
+  // Se expone en window porque el onchange de los filtros la llama desde el HTML.
+  window.renderCobranzas=function renderCobranzas(){
     var wrap=document.getElementById("cobranzasWrap");
     var hoy=today();
     var activas=financiaciones.filter(function(f){return f.cuotas.some(function(c){return !c.pagada;});});
