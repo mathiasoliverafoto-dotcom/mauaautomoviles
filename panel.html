@@ -2151,8 +2151,13 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
         '</label>'+
       '</div>'+
       '<div style="max-height:200px;overflow-y:auto">'+rows+'</div>'+
-      '<div style="display:flex;align-items:center;gap:.8rem;margin-top:.4rem;flex-wrap:wrap;justify-content:flex-end">'+
-        '<span style="font-size:.85rem;font-weight:700" id="cobTotal-'+suffix+'">Total: US$ '+fmtN(primerResto)+'</span>'+
+      '<div style="display:flex;align-items:center;gap:.6rem;margin-top:.5rem;flex-wrap:wrap">'+
+        '<label style="font-size:.8rem;color:var(--ink-soft)">Monto a pagar</label>'+
+        '<input type="number" id="pagoMonto-'+suffix+'" min="0" step="1" value="'+primerResto+'" style="width:110px" oninput="cobPreviewMonto(\''+f.id+'\',\''+suffix+'\')">'+
+        '<span style="font-size:.85rem;font-weight:700;margin-left:auto" id="cobTotal-'+suffix+'"></span>'+
+      '</div>'+
+      '<div id="cobPreview-'+suffix+'" style="font-size:.75rem;color:var(--ink-mute);width:100%"></div>'+
+      '<div style="display:flex;gap:.6rem;margin-top:.3rem;justify-content:flex-end">'+
         '<button class="btn btn-success btn-sm" onclick="pagarCuota(\''+f.id+'\',\'efectivo\',\''+suffix+'\')">Efectivo</button>'+
         '<button class="btn btn-success btn-sm" onclick="pagarCuota(\''+f.id+'\',\'transferencia\',\''+suffix+'\')">Transferencia</button>'+
       '</div>'+
@@ -2168,25 +2173,54 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     } else {
       for(var i=idx;i<checks.length;i++) checks[i].checked=false;
     }
-    cobUpdateTotal(suffix,box);
+    cobSyncMonto(suffix,box);
   };
   window.cobToggleAll=function(fid,suffix,checked){
     var box=document.getElementById("pagoBox-"+suffix);
     if(!box) return;
     var checks=box.querySelectorAll(".cb-pago-check");
     for(var i=0;i<checks.length;i++) checks[i].checked=checked;
-    cobUpdateTotal(suffix,box);
+    cobSyncMonto(suffix,box);
   };
-  function cobUpdateTotal(suffix,box){
+  function cobSyncMonto(suffix,box){
     var checks=box.querySelectorAll(".cb-pago-check");
     var total=0, checkedCount=0;
     for(var i=0;i<checks.length;i++){
       if(checks[i].checked){ total+=parseFloat(checks[i].dataset.valor); checkedCount++; }
     }
-    var lbl=document.getElementById("cobTotal-"+suffix);
-    if(lbl) lbl.textContent="Total: US$ "+fmtN(total)+(checkedCount>1?" ("+checkedCount+" cuotas)":"");
+    var input=document.getElementById("pagoMonto-"+suffix);
+    if(input) input.value=Math.round(total);
     var allCheck=document.getElementById("cobSelAll-"+suffix);
     if(allCheck) allCheck.checked=(checkedCount===checks.length);
+    cobPreviewMonto(null,suffix);
+  }
+  window.cobPreviewMonto=function(fid,suffix){
+    var input=document.getElementById("pagoMonto-"+suffix);
+    var monto=parseInt(input&&input.value||0);
+    var preview=document.getElementById("cobPreview-"+suffix);
+    var lbl=document.getElementById("cobTotal-"+suffix);
+    if(!fid){
+      var box=document.getElementById("pagoBox-"+suffix);
+      if(box){
+        var onclick=box.querySelector(".btn-success");
+        if(onclick){var m=onclick.getAttribute("onclick").match(/pagarCuota\('([^']+)'/);if(m)fid=m[1];}
+      }
+    }
+    var f=fid?financiaciones.find(function(x){return x.id===fid;}):null;
+    if(!f||!preview){return;}
+    var pendientes=f.cuotas.filter(function(c){return !c.pagada;});
+    if(monto<=0||!pendientes.length){if(preview)preview.textContent="";if(lbl)lbl.textContent="";return;}
+    var restante=monto, partes=[];
+    for(var i=0;i<pendientes.length&&restante>0;i++){
+      var rc=restoCuota(pendientes[i]);
+      var ap=Math.min(restante,rc);
+      if(ap<=0) continue;
+      if(ap>=rc) partes.push("Cuota "+pendientes[i].numero+": US$ "+fmtN(ap)+" (completa)");
+      else partes.push("Cuota "+pendientes[i].numero+": US$ "+fmtN(ap)+" (parcial, resta US$ "+fmtN(rc-ap)+")");
+      restante-=ap;
+    }
+    if(lbl) lbl.textContent="Total: US$ "+fmtN(monto);
+    preview.textContent=partes.length?partes.join(" · "):"";
   }
 
   // Se expone en window porque el onchange de los filtros la llama desde el HTML.
@@ -2283,16 +2317,10 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   window.pagarCuota=function(id,metodo,suffix){
     var f=financiaciones.find(function(x){return x.id===id;});
     if(!f){toast("Financiación no encontrada","err");return;}
-    var box=document.getElementById("pagoBox-"+(suffix!=null?suffix:id));
-    var monto=0;
-    if(box){
-      var checks=box.querySelectorAll(".cb-pago-check");
-      for(var i=0;i<checks.length;i++){
-        if(checks[i].checked) monto+=parseFloat(checks[i].dataset.valor);
-      }
-    }
-    if(monto<=0){toast("Seleccioná al menos una cuota","err");return;}
-    api("/api/financiaciones/"+id+"/pagar",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({metodoPago:metodo,montoPagado:Math.round(monto)})}).then(function(){loadAll();toast("Pago registrado");}).catch(function(e){toast(e.message,"err");});
+    var input=document.getElementById("pagoMonto-"+(suffix!=null?suffix:id));
+    var monto=input?Math.max(0,parseInt(input.value||0)):0;
+    if(monto<=0){toast("Ingresá un monto mayor a 0","err");return;}
+    api("/api/financiaciones/"+id+"/pagar",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({metodoPago:metodo,montoPagado:monto})}).then(function(){loadAll();toast("Pago registrado");}).catch(function(e){toast(e.message,"err");});
   };
 
   // ── Inicio (dashboard) ──────────────
