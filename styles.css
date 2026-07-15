@@ -313,10 +313,10 @@ ul { list-style: none; padding: 0; }
 @media (min-width: 960px) {
   .hero-stage {
     position: absolute;
-    /* El nav es fixed/transparente al inicio; sin este offset la foto
-       se ve pasando por debajo del menú. Le sumo aire bajo el nav
-       (que mide ~72px). */
-    top: 30px;
+    /* El nav es fixed/transparente al inicio; sin offset la foto se
+       ve pasando por debajo del menú. Le sumo aire generoso bajo el
+       nav (que puede llegar a ~90px con el logo). */
+    top: 90px;
     right: 0;
     bottom: -2rem;
     width: 50%;
