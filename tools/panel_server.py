@@ -610,14 +610,25 @@ def api_ventas_create():
     if monto_financiado > 0:
         cant_cuotas = max(1, int(body.get("cantidadCuotas", 1)))
         primer_venc = body.get("primerVencimiento") or fecha
+        cuotas_custom = body.get("cuotasPersonalizadas")
         valor_cuota = int(body.get("valorCuota") or round(monto_financiado / cant_cuotas))
         cuotas = []
-        for i in range(cant_cuotas):
-            venc = _sumar_meses(primer_venc, i)
-            cuotas.append({
-                "numero": i + 1, "vencimiento": venc, "valor": valor_cuota,
-                "pagada": False, "fechaPago": None, "metodoPago": None,
-            })
+        if cuotas_custom and isinstance(cuotas_custom, list):
+            cant_cuotas = len(cuotas_custom)
+            for i, monto_c in enumerate(cuotas_custom):
+                venc = _sumar_meses(primer_venc, i)
+                cuotas.append({
+                    "numero": i + 1, "vencimiento": venc, "valor": round(float(monto_c)),
+                    "pagada": False, "fechaPago": None, "metodoPago": None,
+                })
+            valor_cuota = 0
+        else:
+            for i in range(cant_cuotas):
+                venc = _sumar_meses(primer_venc, i)
+                cuotas.append({
+                    "numero": i + 1, "vencimiento": venc, "valor": valor_cuota,
+                    "pagada": False, "fechaPago": None, "metodoPago": None,
+                })
         tasa_interes = float(body.get("tasaInteres", 0) or 0)
         financiaciones = read_json("financiaciones.json")
         financiacion_id = "fin-" + uuid.uuid4().hex[:8]

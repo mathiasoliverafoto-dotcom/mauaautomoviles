@@ -929,6 +929,13 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
             <div class="form-group"><label>Primer vencimiento</label><input type="date" id="vtaPrimerVenc"></div>
           </div>
           <p style="font-size:.78rem;color:var(--ink-mute);margin-bottom:.8rem">El valor de cuota se sugiere según el interés indicado, pero lo podés editar libremente — no tiene que coincidir exactamente con el cálculo.</p>
+
+          <div class="form-toggle" style="margin-bottom:.8rem"><input type="checkbox" id="vtaCuotaPersonalizada" onchange="toggleCuotaPersonalizada()"><label for="vtaCuotaPersonalizada">Cuota personalizada (montos individuales)</label></div>
+          <div id="vtaCuotaPersonalizadaFields" style="display:none">
+            <div id="vtaCuotasCustomList" style="display:flex;flex-direction:column;gap:.5rem"></div>
+            <button type="button" class="btn btn-outline btn-sm" onclick="addCuotaCustom()" style="margin-top:.6rem">+ Añadir cuota</button>
+            <p id="vtaCuotasCustomTotal" style="font-size:.82rem;color:var(--ink-soft);margin-top:.5rem"></p>
+          </div>
         </div>
 
         <div class="form-row full"><div class="form-group"><label>Notas</label><textarea id="vtaNotas" placeholder="Observaciones opcionales..."></textarea></div></div>
@@ -1085,7 +1092,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 
   // ── Calculadora de financiación (interés editable, cuota fija) ──
   var TASA_MENSUAL=0.015, calcMode="cuota";
-  function cuotaFija(saldo,n,tasa){ if(n<=0)return 0; tasa=tasa==null?TASA_MENSUAL:tasa; return tasa===0?(saldo/n):(saldo*tasa/(1-Math.pow(1+tasa,-n))); }
+  function cuotaFija(saldo,n,tasa){ if(n<=0)return 0; tasa=tasa==null?TASA_MENSUAL:tasa; return saldo*(1+tasa*n)/n; }
   window.onCalcTasaChange=function(){
     TASA_MENSUAL=parseFloat(document.getElementById("calcTasa").value||0)/100;
     runCalc();
@@ -1115,12 +1122,13 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     } else {
       var pago=parseFloat(document.getElementById("calcPago").value||0);
       if(!pago||pago<=0){ out.innerHTML='<div class="no-sales">Ingresá cuánto puede pagar por mes.</div>'; return; }
-      var interesMensual=saldo*TASA_MENSUAL;
-      if(pago<=interesMensual){
-        out.innerHTML='<div class="no-sales" style="color:var(--amber)">Con US$ '+fmtN(Math.round(pago))+' por mes no se cubre ni el interés del primer mes (US$ '+fmtN(Math.round(interesMensual))+'). Subí el valor de la cuota.</div>';
+      if(pago<=0){ out.innerHTML='<div class="no-sales">Ingresá cuánto puede pagar por mes.</div>'; return; }
+      var nExact=saldo/(pago-saldo*TASA_MENSUAL);
+      if(TASA_MENSUAL>0 && pago<=saldo*TASA_MENSUAL){
+        out.innerHTML='<div class="no-sales" style="color:var(--amber)">Con US$ '+fmtN(Math.round(pago))+' por mes el pago no alcanza. Subí el valor de la cuota.</div>';
         return;
       }
-      var nExact=-Math.log(1-saldo*TASA_MENSUAL/pago)/Math.log(1+TASA_MENSUAL);
+      if(nExact<1) nExact=1;
       var base=Math.max(1,Math.round(nExact)), ops=[];
       for(var k=Math.max(1,base-2);k<=base+2;k++){ ops.push(k); }
       var mejor=ops.reduce(function(a,b){return Math.abs(cuotaFija(saldo,b)-pago)<Math.abs(cuotaFija(saldo,a)-pago)?b:a;});
@@ -1970,6 +1978,10 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     document.getElementById("vtaValorCuota").value="";
     document.getElementById("vtaPrimerVenc").value="";
     document.getElementById("vtaNotas").value="";
+    document.getElementById("vtaCuotaPersonalizada").checked=false;
+    document.getElementById("vtaCuotaPersonalizadaFields").style.display="none";
+    document.getElementById("vtaCuotasCustomList").innerHTML="";
+    document.getElementById("vtaCuotasCustomTotal").textContent="";
     var sel=document.getElementById("vtaVendedor");
     var vendedorRow=sel.closest(".form-row");
     if(currentUser.rol==="vendedor"){
@@ -1998,11 +2010,55 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   };
 
   window.sugerirValorCuota=function(){
+    if(document.getElementById("vtaCuotaPersonalizada").checked) return;
     var montoFin=parseInt(document.getElementById("vtaMontoFinanciado").value||0);
     var cant=Math.max(1,parseInt(document.getElementById("vtaCantCuotas").value||1));
     var tasa=parseFloat(document.getElementById("vtaTasaInteres").value||0)/100;
     if(montoFin>0) document.getElementById("vtaValorCuota").value=Math.round(cuotaFija(montoFin,cant,tasa));
     recalcVenta();
+  };
+
+  window.toggleCuotaPersonalizada=function(){
+    var on=document.getElementById("vtaCuotaPersonalizada").checked;
+    document.getElementById("vtaCuotaPersonalizadaFields").style.display=on?"block":"none";
+    var stdFields=document.querySelectorAll("#vtaCantCuotas,#vtaValorCuota,#vtaTasaInteres");
+    for(var i=0;i<stdFields.length;i++) stdFields[i].closest(".form-group").style.display=on?"none":"";
+    if(on){
+      var list=document.getElementById("vtaCuotasCustomList");
+      if(!list.children.length) addCuotaCustom();
+    } else {
+      sugerirValorCuota();
+    }
+  };
+  window.addCuotaCustom=function(){
+    var list=document.getElementById("vtaCuotasCustomList");
+    var idx=list.children.length+1;
+    var row=document.createElement("div");
+    row.style.cssText="display:flex;align-items:center;gap:.5rem";
+    row.innerHTML='<span style="font-size:.82rem;font-weight:600;min-width:5.5rem">Cuota '+idx+'</span>'+
+      '<input type="number" class="cuota-custom-val" min="0" placeholder="Monto US$" oninput="updateCuotasCustomTotal()" style="flex:1;max-width:160px">'+
+      (idx>1?'<button type="button" class="btn btn-outline btn-sm" onclick="removeCuotaCustom(this)" style="padding:.3em .5em;font-size:.75rem">✕</button>':'<span style="width:32px"></span>');
+    list.appendChild(row);
+    updateCuotasCustomTotal();
+  };
+  window.removeCuotaCustom=function(btn){
+    var row=btn.closest("div");
+    row.parentNode.removeChild(row);
+    var list=document.getElementById("vtaCuotasCustomList");
+    for(var i=0;i<list.children.length;i++){
+      list.children[i].querySelector("span").textContent="Cuota "+(i+1);
+    }
+    updateCuotasCustomTotal();
+  };
+  window.updateCuotasCustomTotal=function(){
+    var inputs=document.querySelectorAll("#vtaCuotasCustomList .cuota-custom-val");
+    var total=0;
+    for(var i=0;i<inputs.length;i++) total+=parseFloat(inputs[i].value||0);
+    var montoFin=parseInt(document.getElementById("vtaMontoFinanciado").value||0);
+    var el=document.getElementById("vtaCuotasCustomTotal");
+    el.textContent=inputs.length+" cuota"+(inputs.length!==1?"s":"")+": US$ "+fmtN(Math.round(total))+" total"+(montoFin>0?" (saldo a financiar: US$ "+fmtN(montoFin)+")":"");
+    if(montoFin>0 && Math.abs(total-montoFin)>1) el.style.color="var(--amber)";
+    else el.style.color="var(--ink-soft)";
   };
 
   // Búsqueda / creación de cliente dentro del modal de venta
@@ -2103,10 +2159,24 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     if(!form.checkValidity()){form.reportValidity();return;}
     if(!document.getElementById("vtaClienteId").value){toast("Seleccioná o creá un cliente","err");return;}
     var financia=document.getElementById("vtaHayFinanciacion").checked;
+    var customOn=financia&&document.getElementById("vtaCuotaPersonalizada").checked;
     if(financia){
       if(!document.getElementById("vtaMontoFinanciado").value||parseInt(document.getElementById("vtaMontoFinanciado").value)<=0){toast("Indicá el monto a financiar","err");return;}
-      if(!document.getElementById("vtaValorCuota").value||parseInt(document.getElementById("vtaValorCuota").value)<=0){toast("Indicá el valor de cada cuota","err");return;}
+      if(!customOn){
+        if(!document.getElementById("vtaValorCuota").value||parseInt(document.getElementById("vtaValorCuota").value)<=0){toast("Indicá el valor de cada cuota","err");return;}
+      }
       if(!document.getElementById("vtaPrimerVenc").value){toast("Indicá la fecha del primer vencimiento","err");return;}
+    }
+    var cuotasCustom=null;
+    if(customOn){
+      cuotasCustom=[];
+      var cInputs=document.querySelectorAll("#vtaCuotasCustomList .cuota-custom-val");
+      for(var ci=0;ci<cInputs.length;ci++){
+        var cv=parseFloat(cInputs[ci].value||0);
+        if(cv<=0){toast("Cuota "+(ci+1)+": ingresá un monto mayor a 0","err");return;}
+        cuotasCustom.push(cv);
+      }
+      if(!cuotasCustom.length){toast("Agregá al menos una cuota personalizada","err");return;}
     }
     var body={
       vehiculoId:document.getElementById("vtaVehId").value,
@@ -2120,13 +2190,14 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       metodoPago:document.getElementById("vtaMetodoPago").value,
       financia:financia,
       montoFinanciado:financia?parseInt(document.getElementById("vtaMontoFinanciado").value||0):0,
-      cantidadCuotas:financia?parseInt(document.getElementById("vtaCantCuotas").value||1):0,
-      valorCuota:financia?parseInt(document.getElementById("vtaValorCuota").value||0):0,
-      tasaInteres:financia?parseFloat(document.getElementById("vtaTasaInteres").value||0):0,
+      cantidadCuotas:customOn?cuotasCustom.length:(financia?parseInt(document.getElementById("vtaCantCuotas").value||1):0),
+      valorCuota:customOn?0:(financia?parseInt(document.getElementById("vtaValorCuota").value||0):0),
+      tasaInteres:customOn?0:(financia?parseFloat(document.getElementById("vtaTasaInteres").value||0):0),
       primerVencimiento:financia?document.getElementById("vtaPrimerVenc").value:"",
       fecha:document.getElementById("vtaFecha").value,
       notas:document.getElementById("vtaNotas").value
     };
+    if(cuotasCustom) body.cuotasPersonalizadas=cuotasCustom;
     api("/api/ventas",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(function(){closeVentaModal();loadAll();switchSection("finanzas");toast("Venta registrada");}).catch(function(e){toast(e.message,"err");});
   };
 
