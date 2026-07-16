@@ -2316,7 +2316,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       var metodo=c.metodoPago?metodoTxt(c.metodoPago):'—';
       if(pagos.length===1){ cobrador=pagos[0].usuarioCobro?esc(pagos[0].usuarioCobro):'—'; fechaPago=fmtD(pagos[0].fecha); metodo=metodoTxt(pagos[0].metodoPago); }
       var tr='<tr><td>'+c.numero+'</td><td>'+fmtD(c.vencimiento)+'</td><td>US$ '+fmtN(c.valor)+'</td><td class="'+estClase+'">'+estado+'</td><td>'+(c.pagada||acum>0?'US$ '+fmtN(acum):'—')+'</td><td>'+fechaPago+'</td><td>'+metodo+'</td><td>'+cobrador+'</td></tr>';
-      if(pagos.length>1){
+      if(pagos.length){
         pagos.forEach(function(p,i){
           tr+='<tr class="cb-pago-row"><td></td><td colspan="7">Pago '+(i+1)+': US$ '+fmtN(p.monto)+' · '+fmtD(p.fecha)+' · '+metodoTxt(p.metodoPago)+' · '+(p.usuarioCobro?esc(p.usuarioCobro):'—')+'</td></tr>';
         });
