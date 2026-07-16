@@ -773,6 +773,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
           <div class="form-group"><label>Precio de venta (US$)</label><input type="number" id="fPrecio" min="0" required></div>
           <div class="form-group"><label>Cuotas de ($)</label><input type="number" id="fCuota" min="0" placeholder="Se publica en la web"></div>
         </div>
+        <div class="form-row full"><div class="form-group"><label>Observaciones</label><textarea id="fObservaciones" rows="2" placeholder="Ej: En reparación, falta lavar, detalle en puerta..." style="resize:vertical"></textarea></div></div>
         <div style="margin-top:1rem">
           <label style="font-size:.78rem;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em">Fotos</label>
           <div class="foto-upload" id="fotoUpload"><p><strong>Arrastrá fotos acá</strong> o hacé click para seleccionar</p><p style="font-size:.75rem;margin-top:.3rem">JPG, PNG o WebP · máx. 16 MB</p><input type="file" id="fotoInput" multiple accept="image/*" style="display:none"></div>
@@ -983,7 +984,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 <!-- MODAL DETALLE VEHÍCULO -->
 <div class="modal-overlay" id="vehDetOverlay">
   <div class="modal" style="max-width:660px">
-    <div class="modal-head"><h3 id="vdTitulo">Detalle del vehículo</h3><button class="modal-close" onclick="closeVehDet()">&times;</button></div>
+    <div class="modal-head"><h3 id="vdTitulo">Detalle del vehículo</h3><button class="btn btn-outline btn-sm" id="vdShareBtn" style="margin-left:auto;margin-right:.6rem" onclick="shareVehiculo()">Compartir</button><button class="modal-close" onclick="closeVehDet()">&times;</button></div>
     <div class="modal-body">
       <div id="vdGallery"></div>
       <div class="vd-datos" id="vdDatos"></div>
@@ -1137,7 +1138,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   // ── Auth ────────────────────────────
   function checkAuth() {
     api("/api/me").then(function(d){
-      currentUser={ rol:d.rol||"admin_general", sucursal:d.sucursal||"", user:d.user||"", nombre:d.nombre||"" };
+      currentUser={ rol:d.rol||"admin_general", sucursal:d.sucursal||"", user:d.user||"", nombre:d.nombre||"", id:d.id||"" };
       document.getElementById("loginView").style.display="none";
       document.getElementById("appView").classList.add("is-active");
       document.getElementById("userName").textContent=d.nombre||d.user;
@@ -1451,6 +1452,18 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     document.querySelectorAll("#vdGallery .vd-thumbs img").forEach(function(t,ti){t.classList.toggle("is-active",ti===i);});
   };
   window.closeVehDet=function(){document.getElementById("vehDetOverlay").classList.remove("is-open");};
+  window.shareVehiculo=function(){
+    if(!currentVehDetailId) return;
+    var v=vehiculos.find(function(x){return x.id===currentVehDetailId;}); if(!v) return;
+    var titulo=v.marca+" "+v.modelo+" "+v.anio+(v.version?" "+v.version:"");
+    var url=location.origin+"/vehiculo.html?id="+encodeURIComponent(v.id);
+    var texto=titulo+" — Mauá Automóviles";
+    if(navigator.share){
+      navigator.share({title:texto,text:"Mirá este vehículo en Mauá Automóviles: "+titulo,url:url}).catch(function(){});
+    } else {
+      navigator.clipboard.writeText(url).then(function(){toast("Link copiado al portapapeles");}).catch(function(){prompt("Copiá este link:",url);});
+    }
+  };
 
   // Bloque legible del resumen de una venta (comprador + transacción +
   // financiación). Se usa tanto en el detalle del vehículo como en el modal
@@ -1519,8 +1532,10 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       document.getElementById("ventaDetOverlay").classList.add("is-open");
     }
   };
+  var currentVehDetailId=null;
   window.openVehDetail=function(id){
     var v=vehiculos.find(function(x){return x.id===id;}); if(!v) return;
+    currentVehDetailId=id;
     document.getElementById("vdTitulo").textContent=v.marca+" "+v.modelo+" "+v.anio+(v.version?" · "+v.version:"");
     vdFotos=(v.fotos&&v.fotos.length)?v.fotos:[];
     var g=document.getElementById("vdGallery");
@@ -1547,7 +1562,8 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       (v.matricula?item("Matrícula", v.matricula):"")+
       item("Estado", estado)+
       costoItem+
-      item("Precio de venta", v.precio>0?("US$ "+fmtN(v.precio)):"Consultar");
+      item("Precio de venta", v.precio>0?("US$ "+fmtN(v.precio)):"Consultar")+
+      (v.observaciones?item("Observaciones", v.observaciones):"");
 
     var vv=document.getElementById("vdVenta");
     if(currentUser.rol==="vendedor"){ vv.innerHTML=""; }
@@ -1598,6 +1614,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     document.getElementById("fFecha").value=isEdit?v.fechaIngreso:today();
     document.getElementById("fPrimerDueno").checked=isEdit?!!v.primerDueno:false;
     document.getElementById("fPublicado").checked=isEdit?v.publicado!==false:true;
+    document.getElementById("fObservaciones").value=isEdit?(v.observaciones||""):"";
     editFotos=isEdit&&v.fotos?v.fotos.slice():[];
     renderFotoPreview();
     document.getElementById("vehModalOverlay").classList.add("is-open");
@@ -1621,7 +1638,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     var form=document.getElementById("vehForm");
     if(!form.checkValidity()){form.reportValidity();return;}
     var id=document.getElementById("fId").value;
-    var body={marca:document.getElementById("fMarca").value,modelo:document.getElementById("fModelo").value,version:document.getElementById("fVersion").value,condicion:document.getElementById("fCondicion").value,etiqueta:document.getElementById("fEtiqueta").value,carroceria:document.getElementById("fCarroceria").value,anio:parseInt(document.getElementById("fAnio").value),km:parseInt(document.getElementById("fKm").value||0),matricula:document.getElementById("fMatricula").value,costo:parseInt(document.getElementById("fCosto").value||0),precio:parseInt(document.getElementById("fPrecio").value),cuota:parseInt(document.getElementById("fCuota").value||0),tipoMotor:document.getElementById("fMotor").value,transmision:document.getElementById("fTransmision").value,traccion:document.getElementById("fTraccion").value,ubicacion:document.getElementById("fUbicacion").value,fechaIngreso:document.getElementById("fFecha").value,primerDueno:document.getElementById("fPrimerDueno").checked,publicado:document.getElementById("fPublicado").checked,fotos:editFotos};
+    var body={marca:document.getElementById("fMarca").value,modelo:document.getElementById("fModelo").value,version:document.getElementById("fVersion").value,condicion:document.getElementById("fCondicion").value,etiqueta:document.getElementById("fEtiqueta").value,carroceria:document.getElementById("fCarroceria").value,anio:parseInt(document.getElementById("fAnio").value),km:parseInt(document.getElementById("fKm").value||0),matricula:document.getElementById("fMatricula").value,costo:parseInt(document.getElementById("fCosto").value||0),precio:parseInt(document.getElementById("fPrecio").value),cuota:parseInt(document.getElementById("fCuota").value||0),tipoMotor:document.getElementById("fMotor").value,transmision:document.getElementById("fTransmision").value,traccion:document.getElementById("fTraccion").value,ubicacion:document.getElementById("fUbicacion").value,fechaIngreso:document.getElementById("fFecha").value,primerDueno:document.getElementById("fPrimerDueno").checked,publicado:document.getElementById("fPublicado").checked,observaciones:document.getElementById("fObservaciones").value.trim(),fotos:editFotos};
     var url=id?"/api/vehiculos/"+id:"/api/vehiculos";
     document.getElementById("btnSaveVeh").disabled=true;
     api(url,{method:id?"PUT":"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}).then(function(){closeVehModal();loadAll();toast(id?"Vehículo actualizado":"Vehículo creado");}).catch(function(e){toast(e.message,"err");}).finally(function(){document.getElementById("btnSaveVeh").disabled=false;});
@@ -1954,7 +1971,14 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     document.getElementById("vtaPrimerVenc").value="";
     document.getElementById("vtaNotas").value="";
     var sel=document.getElementById("vtaVendedor");
-    sel.innerHTML=vendedores.map(function(vn){return '<option value="'+vn.id+'">'+esc(vn.nombre)+'</option>';}).join("");
+    var vendedorRow=sel.closest(".form-row");
+    if(currentUser.rol==="vendedor"){
+      sel.innerHTML='<option value="'+esc(currentUser.id||"")+'">'+esc(currentUser.nombre||currentUser.usuario||"")+'</option>';
+      if(vendedorRow) vendedorRow.style.display="none";
+    } else {
+      sel.innerHTML=vendedores.map(function(vn){return '<option value="'+vn.id+'">'+esc(vn.nombre)+'</option>';}).join("");
+      if(vendedorRow) vendedorRow.style.display="";
+    }
     document.getElementById("ventaModalOverlay").classList.add("is-open");
     recalcVenta();
   };
@@ -2284,7 +2308,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       totalPagado+=acum;
       var estado,estClase;
       if(c.pagada){ estado="Pagada"; estClase="cb-estado-pagada"; }
-      else if(acum>0){ estado="Parcial ("+fmtN(acum)+" de "+fmtN(c.valor)+")"; estClase="cb-estado-parcial"; }
+      else if(acum>0){ estado="Saldo US$ "+fmtN(c.valor-acum)+" ("+fmtN(acum)+" de "+fmtN(c.valor)+")"; estClase="cb-estado-parcial"; }
       else if(c.vencimiento<hoy){ estado="Vencida"; estClase="cb-estado-vencida"; }
       else { estado="Pendiente"; estClase="cb-estado-pendiente"; }
       var cobrador=c.usuarioCobro?esc(c.usuarioCobro):'—';

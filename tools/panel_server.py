@@ -127,9 +127,15 @@ def api_me():
             if v.get("username") == session["user"]:
                 must_change = v.get("password") == DEFAULT_PW_HASH
                 break
+        vid = ""
+        for v in vendedores:
+            if v.get("username") == session["user"]:
+                vid = v.get("id", "")
+                break
         return jsonify({"user": session["user"], "nombre": session.get("nombre", ""),
                         "rol": session.get("rol", "admin_general"),
                         "sucursal": session.get("sucursal", ""),
+                        "id": vid,
                         "mustChangePassword": must_change})
     return jsonify({"user": None}), 401
 
