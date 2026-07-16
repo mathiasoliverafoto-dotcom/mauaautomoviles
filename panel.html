@@ -2308,7 +2308,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       totalPagado+=acum;
       var estado,estClase;
       if(c.pagada){ estado="Pagada"; estClase="cb-estado-pagada"; }
-      else if(acum>0){ estado="Saldo US$ "+fmtN(c.valor-acum)+" ("+fmtN(acum)+" de "+fmtN(c.valor)+")"; estClase="cb-estado-parcial"; }
+      else if(acum>0){ estado="Saldo US$ "+fmtN(c.valor-acum); estClase="cb-estado-parcial"; }
       else if(c.vencimiento<hoy){ estado="Vencida"; estClase="cb-estado-vencida"; }
       else { estado="Pendiente"; estClase="cb-estado-pendiente"; }
       var cobrador=c.usuarioCobro?esc(c.usuarioCobro):'—';
