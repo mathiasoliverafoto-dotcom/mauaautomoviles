@@ -911,9 +911,10 @@
     if (!root || !data.vehiculos) return;
 
     var id = new URLSearchParams(location.search).get("id");
+    var todos = data._allVehiculos || data.vehiculos;
     var v = null;
-    for (var i = 0; i < data.vehiculos.length; i++) {
-      if (data.vehiculos[i].id === id) { v = data.vehiculos[i]; break; }
+    for (var i = 0; i < todos.length; i++) {
+      if (todos[i].id === id) { v = todos[i]; break; }
     }
 
     var notFoundEl = $("[data-pdp-notfound]");
@@ -1200,6 +1201,7 @@
 
     /* Vehículos se cargan desde JSON (gestionado por el panel) */
     fetch("data/vehiculos.json").then(function (r) { return r.json(); }).then(function (vehiculos) {
+      data._allVehiculos = vehiculos;
       data.vehiculos = vehiculos.filter(function (v) { return v.publicado !== false; });
       safe(initUsadosCarousel, "usadosCarousel");
       safe(initCatalog, "catalog");

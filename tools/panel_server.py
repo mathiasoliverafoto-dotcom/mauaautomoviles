@@ -748,16 +748,12 @@ def api_financiaciones_pagar(fid):
 
 @app.route("/data/vehiculos.json")
 def public_vehiculos():
-    # El sitio público no expone precio ni kilometraje: se cargan en el
-    # panel pero no se muestran ni se envían al frontend.
     vehiculos = read_json("vehiculos.json")
-    publicados = []
+    oculto = ("costo", "creadoPor", "creadoEn", "historial")
+    resultado = []
     for v in vehiculos:
-        if not v.get("publicado", True):
-            continue
-        oculto = ("costo", "precio", "km", "creadoPor", "creadoEn", "historial")
-        publicados.append({k: val for k, val in v.items() if k not in oculto})
-    return jsonify(publicados)
+        resultado.append({k: val for k, val in v.items() if k not in oculto})
+    return jsonify(resultado)
 
 
 # ──────────────────────────────────────────────────────────────
