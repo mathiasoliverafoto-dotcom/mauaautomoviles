@@ -866,7 +866,6 @@ ul { list-style: none; padding: 0; }
   .veh-foot { flex-wrap: wrap; }
   .veh-name { font-size: 1.05rem; }
   .pdp-gallery-main { min-height: 220px; }
-  .pdp-zoom-lens { display: none !important; }
   .pdp-side { padding: 1.2rem; }
   .pdp-title { font-size: 1.4rem; }
   .pdp-price { font-size: 1.6rem; }

@@ -971,9 +971,10 @@
     updateArrows();
     renderPhoto(0);
 
-    /* ---- Zoom con lupa ---- */
+    /* ---- Zoom con lupa (solo desktop) ---- */
+    var isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
     var galleryMain = $("[data-pdp-gallery]");
-    if (galleryMain && mainPhoto) {
+    if (galleryMain && mainPhoto && !isTouchDevice) {
       var lens = document.createElement("div");
       lens.className = "pdp-zoom-lens";
       galleryMain.appendChild(lens);
