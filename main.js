@@ -979,16 +979,18 @@
       galleryMain.appendChild(lens);
       var ZOOM = 2.4, LSIZE_W = 320, LSIZE_H = 260, LSIZE = Math.min(LSIZE_W, LSIZE_H);
       galleryMain.addEventListener("mousemove", function (e) {
+        if (e.target.closest(".pdp-arrow")) { lens.style.display = "none"; return; }
         var cr = galleryMain.getBoundingClientRect();
         var cx = e.clientX - cr.left;
         var cy = e.clientY - cr.top;
-        /* tamaño real de la imagen renderizada (object-fit:contain) */
         var nw = mainPhoto.naturalWidth || mainPhoto.width || 1;
         var nh = mainPhoto.naturalHeight || mainPhoto.height || 1;
         var cw = galleryMain.clientWidth, ch = galleryMain.clientHeight;
-        var scale = Math.min(cw / nw, ch / nh);
-        var dispW = nw * scale, dispH = nh * scale;
-        var offX = (cw - dispW) / 2, offY = (ch - dispH) / 2;
+        var dispW, dispH, offX, offY;
+        var scaleW = cw / nw, scaleH = ch / nh;
+        var scale = Math.max(scaleW, scaleH);
+        dispW = nw * scale; dispH = nh * scale;
+        offX = (cw - dispW) / 2; offY = (ch - dispH) / 2;
         var imgX = cx - offX, imgY = cy - offY;
         if (imgX < 0 || imgY < 0 || imgX > dispW || imgY > dispH) {
           lens.style.display = "none"; return;
