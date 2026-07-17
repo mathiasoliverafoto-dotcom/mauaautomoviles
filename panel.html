@@ -540,7 +540,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
 
       <h3 style="font-size:.95rem;margin:1.8rem 0 .8rem">Cuotas que vencen hoy</h3>
       <div id="inicioVencen"></div>
-      <h3 style="font-size:.95rem;margin:1.8rem 0 .8rem">Cumpleaños de hoy 🎂</h3>
+      <h3 style="font-size:.95rem;margin:1.8rem 0 .8rem">Cumpleaños de hoy &#127874;</h3>
       <div id="inicioCumples"></div>
     </div>
 
@@ -2347,7 +2347,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       var pendiente=pendientes[0];
       var resto=restoCuota(pendiente);
       var totalPend=pendientes.reduce(function(a,c){return a+restoCuota(c);},0);
-      var msg="Hola "+f.clienteNombre+"! Te recordamos que el "+fmtFechaLarga(pendiente.vencimiento)+" vence tu cuota de US$ "+fmtN(resto)+" correspondiente a tu compra en Mauá Automóviles. ¡Muchas gracias por confiar en nosotros! 🚗";
+      var msg="Hola "+f.clienteNombre+"! Te recordamos que el "+fmtFechaLarga(pendiente.vencimiento)+" vence tu cuota de US$ "+fmtN(resto)+" correspondiente a tu compra en Mauá Automóviles. ¡Muchas gracias por confiar en nosotros! "+String.fromCodePoint(0x1F697)+"";
       var badge=f._vencidas>0?'<span class="toma-tag" style="background:var(--danger,#dc2626)">'+f._vencidas+' cuota'+(f._vencidas>1?'s':'')+' vencida'+(f._vencidas>1?'s':'')+'</span>':'';
       var parcialBadge=pendientes.some(function(c){return c.montoPagado>0;})?'<span class="toma-tag" style="background:var(--amber)">pago parcial</span>':'';
       return '<div class="cobranza-card">'+
@@ -2473,7 +2473,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       vwrap.innerHTML=vencen.map(function(it){
         var f=it.f, c=it.c;
         var restoIni=restoCuota(c);
-        var msg="Hola "+f.clienteNombre+"! Te recordamos que hoy vence tu cuota de US$ "+fmtN(restoIni)+" correspondiente a tu compra en Mauá Automóviles. ¡Muchas gracias por confiar en nosotros! 🚗";
+        var msg="Hola "+f.clienteNombre+"! Te recordamos que hoy vence tu cuota de US$ "+fmtN(restoIni)+" correspondiente a tu compra en Mauá Automóviles. ¡Muchas gracias por confiar en nosotros! "+String.fromCodePoint(0x1F697)+"";
         return '<div class="cobranza-card">'+
           '<div class="cobranza-info"><div class="cb-cliente">'+esc(f.clienteNombre)+(c.montoPagado>0?'<span class="toma-tag" style="background:var(--amber)">pago parcial</span>':'')+'</div><div class="cb-veh">'+esc(f.vehiculo)+'</div></div>'+
           '<div class="cobranza-prog">cuota '+c.numero+'/'+f.cantidadCuotas+'</div>'+
@@ -2497,9 +2497,9 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
         var extra="";
         var y=c.fechaNacimiento?parseInt(c.fechaNacimiento.slice(0,4),10):0;
         if(y) extra=" · cumple "+(parseInt(hoy.slice(0,4),10)-y);
-        var msg="¡Feliz cumpleaños "+c.nombre+"! 🎉🎂 Todo el equipo de Mauá Automóviles te desea un día espectacular. ¡Gracias por confiar en nosotros!";
+        var msg="¡Feliz cumpleaños "+c.nombre+"! "+String.fromCodePoint(0x1F389,0x1F382)+" Todo el equipo de Mauá Automóviles te desea un día espectacular. ¡Gracias por confiar en nosotros!";
         return '<div class="cobranza-card">'+
-          '<div class="cobranza-info"><div class="cb-cliente">🎂 '+esc(c.nombre)+'</div>'+(c.telefono?'<div class="cb-veh">'+esc(c.telefono)+extra+'</div>':'')+'</div>'+
+          '<div class="cobranza-info"><div class="cb-cliente">&#127874; '+esc(c.nombre)+'</div>'+(c.telefono?'<div class="cb-veh">'+esc(c.telefono)+extra+'</div>':'')+'</div>'+
           '<div class="cobranza-actions">'+waBtnHTML(c.telefono,msg,"Saludar por WhatsApp")+'</div>'+
         '</div>';
       }).join("");
