@@ -18,9 +18,8 @@
   /* ---- Formato de números para UI (es-UY) ---- */
   function fmtNum(n) { return Number(n || 0).toLocaleString("es-UY"); }
   function fmtPrecio(n) { return n > 0 ? ("US$ " + fmtNum(n)) : "Consultar"; }
-  /* Precio que se muestra en el sitio: la cuota mensual en pesos que fija la
-     automotora. Si no se cargó, se muestra "Consultar". */
   function cuotaWebHTML(v) {
+    if (v.condicion === "0km" && v.precio > 0) return 'US$ ' + fmtNum(v.precio);
     return (v.cuota && v.cuota > 0)
       ? '<span class="veh-price-lbl">Cuotas de</span> $ ' + fmtNum(v.cuota)
       : 'Consultar';
