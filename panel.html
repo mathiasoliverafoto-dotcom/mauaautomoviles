@@ -1755,6 +1755,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       '</tr></thead><tbody>'+rows+'</tbody></table></div>';
   }
 
+  window.renderPersonal=renderPersonal;
   window.toggleComision=function(){document.getElementById("comFields").style.display=document.getElementById("vndHayCom").checked?"block":"none";};
   window.onVndRolChange=function(){
     var esGeneral=document.getElementById("vndRol").value==="admin_general";
