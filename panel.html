@@ -658,6 +658,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
         <select id="cobOrden" onchange="renderCobranzas()">
           <option value="venc">Ordenar por próximo vencimiento</option>
           <option value="vencidas">Ordenar por cuotas vencidas impagas</option>
+          <option value="nombre">Ordenar por nombre</option>
         </select>
       </div>
       <div id="cobranzasWrap"></div>
@@ -2334,6 +2335,8 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
     var orden=document.getElementById("cobOrden").value;
     if(orden==="vencidas"){
       lista=lista.slice().sort(function(a,b){return b._vencidas-a._vencidas;});
+    } else if(orden==="nombre"){
+      lista=lista.slice().sort(function(a,b){return (a.clienteNombre||"").localeCompare(b.clienteNombre||"");});
     } else {
       lista=lista.slice().sort(function(a,b){
         var pa=a.cuotas.find(function(c){return !c.pagada;});
