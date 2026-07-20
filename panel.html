@@ -2353,7 +2353,8 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       var parcialBadge=pendientes.some(function(c){return c.montoPagado>0;})?'<span class="toma-tag" style="background:var(--amber)">pago parcial</span>':'';
       return '<div class="cobranza-card">'+
         '<div class="cobranza-info" onclick="toggleCobHistorial(\''+f.id+'\')" title="Ver historial de cuotas">'+
-          '<div class="cb-cliente">'+esc(f.clienteNombre)+badge+parcialBadge+'</div>'+
+          '<div class="cb-cliente">'+esc(f.clienteNombre)+'</div>'+
+          (badge||parcialBadge?'<div style="margin-top:.3rem">'+badge+(badge&&parcialBadge?' ':'')+parcialBadge+'</div>':'')+
           '<div class="cb-veh">'+esc(f.vehiculo)+'</div>'+
         '</div>'+
         '<div class="cobranza-prog">'+pagadas+'/'+f.cantidadCuotas+' cuotas</div>'+
@@ -2476,7 +2477,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
         var restoIni=restoCuota(c);
         var msg="Hola "+f.clienteNombre+"! Te recordamos que hoy vence tu cuota de US$ "+fmtN(restoIni)+" correspondiente a tu compra en Mauá Automóviles. Muchas gracias por confiar en nosotros!";
         return '<div class="cobranza-card">'+
-          '<div class="cobranza-info"><div class="cb-cliente">'+esc(f.clienteNombre)+(c.montoPagado>0?'<span class="toma-tag" style="background:var(--amber)">pago parcial</span>':'')+'</div><div class="cb-veh">'+esc(f.vehiculo)+'</div></div>'+
+          '<div class="cobranza-info"><div class="cb-cliente">'+esc(f.clienteNombre)+'</div>'+(c.montoPagado>0?'<div style="margin-top:.3rem"><span class="toma-tag" style="background:var(--amber)">pago parcial</span></div>':'')+'<div class="cb-veh">'+esc(f.vehiculo)+'</div></div>'+
           '<div class="cobranza-prog">cuota '+c.numero+'/'+f.cantidadCuotas+'</div>'+
           '<div class="cobranza-venc"><div class="cb-valor">US$ '+fmtN(restoIni)+'</div></div>'+
           '<div class="cobranza-actions">'+
