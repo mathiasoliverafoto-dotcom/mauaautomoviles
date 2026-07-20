@@ -645,7 +645,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
         <input type="search" id="cliBuscar" placeholder="Escribí un nombre…" oninput="renderClientes()" style="min-width:220px;flex:1 1 220px">
         <span class="vf-count" id="cliCount"></span>
       </div>
-      <div class="cli-list-head"><span>Nombre y apellido</span><span>Teléfono</span><span>Dirección</span><span>Nacimiento</span><span></span></div>
+      <div class="cli-list-head"><span>Apellido y nombre</span><span>Teléfono</span><span>Dirección</span><span>Nacimiento</span><span></span></div>
       <div id="clientesGrid" class="cli-list"></div>
     </div>
 
@@ -1859,6 +1859,7 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
         return (c.nombre||"").toLowerCase().indexOf(q)>-1;
       });
     }
+    lista=lista.slice().sort(function(a,b){return (a.nombre||"").localeCompare(b.nombre||"");});
     if(countEl) countEl.textContent=q?(lista.length+" de "+clientes.length):"";
     if(!lista.length){grid.innerHTML='<div class="no-sales">Ningún cliente coincide con la búsqueda</div>';return;}
     grid.innerHTML=lista.map(function(c){
@@ -2391,7 +2392,8 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       var fechaPago=c.fechaPago?fmtD(c.fechaPago):'—';
       var metodo=c.metodoPago?metodoTxt(c.metodoPago):'—';
       if(pagos.length===1){ cobrador=pagos[0].usuarioCobro?esc(pagos[0].usuarioCobro):'—'; fechaPago=fmtD(pagos[0].fecha); metodo=metodoTxt(pagos[0].metodoPago); }
-      var tr='<tr><td>'+c.numero+'</td><td>'+fmtD(c.vencimiento)+'</td><td>US$ '+fmtN(c.valor)+'</td><td class="'+estClase+'">'+estado+'</td><td>'+(c.pagada||acum>0?'US$ '+fmtN(acum):'—')+'</td><td>'+fechaPago+'</td><td>'+metodo+'</td><td>'+cobrador+'</td></tr>';
+      var vencCell=c.pagada?fmtD(c.vencimiento):'<input type="date" class="cob-venc-input" data-fid="'+f.id+'" data-num="'+c.numero+'" value="'+c.vencimiento+'" style="font-size:.78rem;background:var(--bg-3);color:var(--ink);border:1px solid var(--line);border-radius:4px;padding:.15rem .3rem">';
+      var tr='<tr><td>'+c.numero+'</td><td>'+vencCell+'</td><td>US$ '+fmtN(c.valor)+'</td><td class="'+estClase+'">'+estado+'</td><td>'+(c.pagada||acum>0?'US$ '+fmtN(acum):'—')+'</td><td>'+fechaPago+'</td><td>'+metodo+'</td><td>'+cobrador+'</td></tr>';
       if(pagos.length){
         pagos.forEach(function(p,i){
           tr+='<tr class="cb-pago-row"><td></td><td colspan="7">Pago '+(i+1)+': US$ '+fmtN(p.monto)+' · '+fmtD(p.fecha)+' · '+metodoTxt(p.metodoPago)+' · '+(p.usuarioCobro?esc(p.usuarioCobro):'—')+'</td></tr>';
@@ -2400,14 +2402,33 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       return tr;
     }).join("");
     var totalCuotas=f.cuotas.reduce(function(a,c){return a+c.valor;},0);
+    var tienePendientes=f.cuotas.some(function(c){return !c.pagada;});
     return '<div class="cb-historial" id="cobHist-'+f.id+'">'+
       '<div class="table-wrap"><table><thead><tr><th>#</th><th>Vencimiento</th><th>Valor</th><th>Estado</th><th>Cobrado</th><th>Fecha pago</th><th>Forma</th><th>Cobrado por</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
-      '<div style="text-align:right;font-size:.78rem;margin-top:.5rem;color:var(--ink-soft)">Total cobrado: US$ '+fmtN(totalPagado)+' / US$ '+fmtN(totalCuotas)+'</div>'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:.5rem">'+
+        (tienePendientes?'<button class="btn btn-outline btn-sm" onclick="guardarVencimientos(\''+f.id+'\')">Guardar fechas</button>':'')+
+        '<div style="font-size:.78rem;color:var(--ink-soft);margin-left:auto">Total cobrado: US$ '+fmtN(totalPagado)+' / US$ '+fmtN(totalCuotas)+'</div>'+
+      '</div>'+
     '</div>';
   }
   window.toggleCobHistorial=function(id){
     var el=document.getElementById("cobHist-"+id);
     if(el) el.classList.toggle("is-open");
+  };
+  window.guardarVencimientos=function(fid){
+    var inputs=document.querySelectorAll('.cob-venc-input[data-fid="'+fid+'"]');
+    var f=financiaciones.find(function(x){return x.id===fid;});
+    if(!f)return;
+    var cambios=[];
+    inputs.forEach(function(inp){
+      var num=parseInt(inp.dataset.num);
+      var cuota=f.cuotas.find(function(c){return c.numero===num;});
+      if(cuota && inp.value && inp.value!==cuota.vencimiento){
+        cambios.push({numero:num,vencimiento:inp.value});
+      }
+    });
+    if(!cambios.length){toast("No hay cambios en las fechas");return;}
+    api("/api/financiaciones/"+fid+"/vencimientos",{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({cambios:cambios})}).then(function(){loadAll();toast("Fechas actualizadas");}).catch(function(e){toast(e.message,"err");});
   };
   window.togglePagoBox=function(id){
     var box=document.getElementById("pagoBox-"+id);

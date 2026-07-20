@@ -752,6 +752,29 @@ def api_financiaciones_pagar(fid):
             return jsonify(f)
     return jsonify({"error": "Financiación no encontrada"}), 404
 
+@app.route("/api/financiaciones/<fid>/vencimientos", methods=["PUT"])
+@require_roles("admin_general", "admin_sucursal")
+def api_financiaciones_vencimientos(fid):
+    body = request.get_json(silent=True) or {}
+    cambios = body.get("cambios", [])
+    if not cambios:
+        return jsonify({"error": "No hay cambios"}), 400
+    financiaciones = read_json("financiaciones.json")
+    for f in financiaciones:
+        if f["id"] == fid:
+            for cambio in cambios:
+                num = cambio.get("numero")
+                nueva_fecha = cambio.get("vencimiento", "")
+                if not num or not nueva_fecha:
+                    continue
+                for cuota in f["cuotas"]:
+                    if cuota["numero"] == num:
+                        cuota["vencimiento"] = nueva_fecha
+                        break
+            write_json("financiaciones.json", financiaciones)
+            return jsonify(f)
+    return jsonify({"error": "Financiación no encontrada"}), 404
+
 
 # ──────────────────────────────────────────────────────────────
 # Datos públicos (para el frontend)
