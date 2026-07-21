@@ -2527,20 +2527,31 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       if(!cobrosLista.length){
         cobHoyWrap.innerHTML='<div class="no-sales">Sin cobranzas del día.</div>';
       } else {
-        var mostrarCols=!esVendedor;
-        cobHoyWrap.innerHTML='<div class="table-wrap"><table><thead><tr>'+
-          '<th>Cliente</th><th>Cuota</th><th>Monto</th><th>Forma</th>'+
-          (mostrarCols?'<th>Cobrado por</th>':'')+
-          (rol==="admin_general"?'<th>Sucursal</th>':'')+
-        '</tr></thead><tbody>'+cobrosLista.map(function(x){
-          return '<tr><td>'+esc(x.f.clienteNombre)+'</td>'+
+        var totalCobros=cobrosLista.reduce(function(a,x){return a+x.monto;},0);
+        var mostrarCobrador=!esVendedor;
+        var mostrarSucursal=rol==="admin_general";
+        var htmlCob='<div class="stats-row" style="margin-bottom:1rem">'+
+          statC(cobrosLista.length,"Cobros")+
+          statC("US$ "+fmtN(totalCobros),"Total cobrado")+
+        '</div>';
+        htmlCob+='<div style="overflow-x:auto"><table class="sales-table"><thead><tr>'+
+          '<th>Cliente</th><th>Vehículo</th><th>Cuota</th><th>Monto</th><th>Forma de pago</th>'+
+          (mostrarCobrador?'<th>Cobrado por</th>':'')+
+          (mostrarSucursal?'<th>Sucursal</th>':'')+
+        '</tr></thead><tbody>';
+        cobrosLista.forEach(function(x){
+          htmlCob+='<tr>'+
+            '<td>'+esc(x.f.clienteNombre)+'</td>'+
+            '<td>'+esc(x.f.vehiculo||"—")+'</td>'+
             '<td>'+x.c.numero+'/'+x.f.cantidadCuotas+'</td>'+
-            '<td>US$ '+fmtN(x.monto)+'</td>'+
+            '<td><strong>US$ '+fmtN(x.monto)+'</strong></td>'+
             '<td>'+metodoTxt(x.metodoPago||"efectivo")+'</td>'+
-            (mostrarCols?'<td>'+esc(x.usuario||"—")+'</td>':'')+
-            (rol==="admin_general"?'<td>'+esc((x.sucursal||"").split(",")[0]||"—")+'</td>':'')+
+            (mostrarCobrador?'<td>'+esc(x.usuario||"—")+'</td>':'')+
+            (mostrarSucursal?'<td>'+esc(x.sucursal||"—")+'</td>':'')+
           '</tr>';
-        }).join("")+'</tbody></table></div>';
+        });
+        htmlCob+='</tbody></table></div>';
+        cobHoyWrap.innerHTML=htmlCob;
       }
     }
 
