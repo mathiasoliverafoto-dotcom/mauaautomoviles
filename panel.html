@@ -538,6 +538,9 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       </div>
       <div id="inicioVentasHoy"></div>
 
+      <h3 style="font-size:.95rem;margin:1.8rem 0 .8rem">Cobranzas de hoy</h3>
+      <div id="inicioCobrosHoy"></div>
+
       <h3 style="font-size:.95rem;margin:1.8rem 0 .8rem">Cuotas que vencen hoy</h3>
       <div id="inicioVencen"></div>
       <h3 style="font-size:.95rem;margin:1.8rem 0 .8rem">Cumpleaños de hoy &#127874;</h3>
@@ -2447,27 +2450,43 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
   // ── Inicio (dashboard) ──────────────
   function renderInicio(){
     var hoy=today();
-    var esSucursal=currentUser.rol==="admin_sucursal";
-    document.getElementById("inicioScope").textContent=esSucursal?("Sucursal: "+(currentUser.sucursal||"").split(",")[0]):"Todas las sucursales";
+    var rol=currentUser.rol;
+    var esSucursal=rol==="admin_sucursal";
+    var esVendedor=rol==="vendedor";
+    var miNombre=(currentUser.nombre||"").trim();
+    var miSucursal=currentUser.sucursal||"";
+    var scope=esSucursal?("Sucursal: "+miSucursal.split(",")[0])
+             :esVendedor?("Vendedor: "+miNombre)
+             :"Todas las sucursales";
+    document.getElementById("inicioScope").textContent=scope;
 
-    // Ingresos del día. Las ventas ya vienen filtradas por sucursal desde
-    // el backend para el admin de sucursal; las cuotas se atribuyen a la
-    // sucursal donde se cobraron.
+    // Ventas del día filtradas por rol
     var ventasHoy=ventas.filter(function(v){return v.fecha===hoy;});
+    if(esSucursal){
+      ventasHoy=ventasHoy.filter(function(v){return (v.sucursal||"")===miSucursal;});
+    } else if(esVendedor){
+      ventasHoy=ventasHoy.filter(function(v){return (v.vendedorNombre||"")===miNombre;});
+    }
     var ingresoVentas=ventasHoy.reduce(function(a,v){return a+(v.ingresoNeto||0);},0);
+
+    // Cobros del día filtrados por rol (sucursal / vendedor / todos)
     var ingresoCuotas=0, cobrosHoy=0;
+    function matchPago(p){
+      if(esSucursal) return (p.sucursalCobro||"")===miSucursal;
+      if(esVendedor) return (p.usuarioCobro||"")===miNombre;
+      return true;
+    }
     financiaciones.forEach(function(f){
       f.cuotas.forEach(function(c){
         var pagos=c.pagos||[];
         if(pagos.length){
           pagos.forEach(function(p){
-            if(p.fecha===hoy){
-              if(esSucursal && (p.sucursalCobro||"")!==currentUser.sucursal) return;
-              ingresoCuotas+=p.monto; cobrosHoy++;
-            }
+            if(p.fecha!==hoy) return;
+            if(!matchPago(p)) return;
+            ingresoCuotas+=p.monto; cobrosHoy++;
           });
         } else if(c.pagada && c.fechaPago===hoy){
-          if(esSucursal && (c.sucursalCobro||"")!==currentUser.sucursal) return;
+          if(!matchPago(c)) return;
           ingresoCuotas+=(c.montoCobrado!=null?c.montoCobrado:c.valor); cobrosHoy++;
         }
       });
@@ -2478,14 +2497,52 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       statC("US$ "+fmtN(ingresoVentas+ingresoCuotas),"Total del día")+
       statC(ventasHoy.length+" vta · "+cobrosHoy+" cobro","Movimientos hoy");
 
-    // Ventas de hoy — admin_general ve todas las sucursales y puede
-    // filtrar; admin_sucursal ya recibe las ventas filtradas del backend.
+    // Filtro por sucursal solo tiene sentido para admin_general
     var sucFiltroWrap=document.getElementById("inicioSucFiltroWrap");
     var sucFiltroSel=document.getElementById("inicioSucFiltro");
-    sucFiltroWrap.style.display=esSucursal?"none":"";
-    var sucFiltro=esSucursal?"":sucFiltroSel.value;
+    sucFiltroWrap.style.display=(esSucursal||esVendedor)?"none":"";
+    var sucFiltro=(esSucursal||esVendedor)?"":sucFiltroSel.value;
     var ventasHoyVista=sucFiltro?ventasHoy.filter(function(v){return v.sucursal===sucFiltro;}):ventasHoy;
     document.getElementById("inicioVentasHoy").innerHTML=ventasTablaHTML(ventasHoyVista);
+
+    // Cobranzas del día (nueva tabla)
+    var cobrosLista=[];
+    financiaciones.forEach(function(f){
+      f.cuotas.forEach(function(c){
+        var pagos=c.pagos||[];
+        if(pagos.length){
+          pagos.forEach(function(p){
+            if(p.fecha!==hoy) return;
+            if(!matchPago(p)) return;
+            cobrosLista.push({f:f,c:c,monto:p.monto,metodoPago:p.metodoPago,sucursal:p.sucursalCobro,usuario:p.usuarioCobro});
+          });
+        } else if(c.pagada && c.fechaPago===hoy){
+          if(!matchPago(c)) return;
+          cobrosLista.push({f:f,c:c,monto:(c.montoCobrado!=null?c.montoCobrado:c.valor),metodoPago:c.metodoPago,sucursal:c.sucursalCobro,usuario:c.usuarioCobro});
+        }
+      });
+    });
+    var cobHoyWrap=document.getElementById("inicioCobrosHoy");
+    if(cobHoyWrap){
+      if(!cobrosLista.length){
+        cobHoyWrap.innerHTML='<div class="no-sales">Sin cobranzas del día.</div>';
+      } else {
+        var mostrarCols=!esVendedor;
+        cobHoyWrap.innerHTML='<div class="table-wrap"><table><thead><tr>'+
+          '<th>Cliente</th><th>Cuota</th><th>Monto</th><th>Forma</th>'+
+          (mostrarCols?'<th>Cobrado por</th>':'')+
+          (rol==="admin_general"?'<th>Sucursal</th>':'')+
+        '</tr></thead><tbody>'+cobrosLista.map(function(x){
+          return '<tr><td>'+esc(x.f.clienteNombre)+'</td>'+
+            '<td>'+x.c.numero+'/'+x.f.cantidadCuotas+'</td>'+
+            '<td>US$ '+fmtN(x.monto)+'</td>'+
+            '<td>'+metodoTxt(x.metodoPago||"efectivo")+'</td>'+
+            (mostrarCols?'<td>'+esc(x.usuario||"—")+'</td>':'')+
+            (rol==="admin_general"?'<td>'+esc((x.sucursal||"").split(",")[0]||"—")+'</td>':'')+
+          '</tr>';
+        }).join("")+'</tbody></table></div>';
+      }
+    }
 
     // Cuotas que vencen hoy — lista general (todas las sucursales): el
     // cliente puede pagar en cualquiera.
