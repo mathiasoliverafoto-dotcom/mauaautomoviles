@@ -692,6 +692,33 @@ def api_ventas_create():
 
     return jsonify(venta), 201
 
+@app.route("/api/ventas/<vid>", methods=["PATCH"])
+@require_roles("admin_general", "admin_sucursal", "vendedor")
+def api_ventas_editar(vid):
+    body = request.get_json(silent=True) or {}
+    nueva_fecha = body.get("fecha", "").strip()
+    if not nueva_fecha or len(nueva_fecha) != 10:
+        return jsonify({"error": "Fecha inválida"}), 400
+    ventas = read_json("ventas.json")
+    venta = next((v for v in ventas if v["id"] == vid), None)
+    if not venta:
+        return jsonify({"error": "Venta no encontrada"}), 404
+    rol = session.get("rol")
+    if rol == "admin_sucursal":
+        if venta.get("sucursal", "") != session.get("sucursal", ""):
+            return jsonify({"error": "No podés editar ventas de otra sucursal"}), 403
+    elif rol == "vendedor":
+        mi_id = session.get("id", "")
+        mi_nombre = (session.get("nombre") or "").strip()
+        if venta.get("vendedorId", "") != mi_id and (venta.get("vendedorNombre") or "").strip() != mi_nombre:
+            return jsonify({"error": "Solo podés editar tus propias ventas"}), 403
+    for i, v in enumerate(ventas):
+        if v["id"] == vid:
+            ventas[i]["fecha"] = nueva_fecha
+            break
+    write_json("ventas.json", ventas)
+    return jsonify(ventas[i])
+
 @app.route("/api/ventas/<vid>", methods=["DELETE"])
 @require_roles("admin_general", "admin_sucursal", "vendedor")
 def api_ventas_anular(vid):

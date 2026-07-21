@@ -1528,14 +1528,30 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       '</div></div>';
     }
 
-    var puedeAnular=currentUser.rol==="admin_general"
+    var puedeEditar=currentUser.rol==="admin_general"
       ||(currentUser.rol==="admin_sucursal"&&v.sucursal===currentUser.sucursal)
       ||(currentUser.rol==="vendedor"&&(v.vendedorId===currentUser.id||(v.vendedorNombre||"").trim()===(currentUser.nombre||"").trim()));
-    if(puedeAnular){
-      html+='<div style="margin-top:1rem;text-align:right"><button class="btn btn-outline btn-sm" style="color:var(--red);border-color:var(--red)" onclick="anularVenta(\''+esc(v.id)+'\')">Anular venta</button></div>';
+    if(puedeEditar){
+      html+='<div style="margin-top:1rem;display:flex;gap:.5rem;justify-content:flex-end;flex-wrap:wrap">'+
+        '<button class="btn btn-outline btn-sm" onclick="editarFechaVenta(\''+esc(v.id)+'\')">Editar fecha</button>'+
+        '<button class="btn btn-outline btn-sm" style="color:var(--red);border-color:var(--red)" onclick="anularVenta(\''+esc(v.id)+'\')">Anular venta</button>'+
+      '</div>';
     }
     return html;
   }
+  window.editarFechaVenta=function(id){
+    var v=ventas.find(function(x){return x.id===id;}); if(!v) return;
+    var nueva=prompt("Nueva fecha de la venta (AAAA-MM-DD):", v.fecha||today());
+    if(!nueva) return;
+    nueva=nueva.trim();
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(nueva)){toast("Formato inválido, usá AAAA-MM-DD","err");return;}
+    api("/api/ventas/"+id,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({fecha:nueva})}).then(function(){
+      loadAll();
+      var ov=document.getElementById("ventaDetOverlay"); if(ov)ov.classList.remove("is-open");
+      var ov2=document.getElementById("vehDetOverlay"); if(ov2)ov2.classList.remove("is-open");
+      toast("Fecha actualizada");
+    }).catch(function(e){toast(e.message,"err");});
+  };
   window.anularVenta=function(id){
     var v=ventas.find(function(x){return x.id===id;}); if(!v) return;
     var fin=v.financiacionId?financiaciones.find(function(x){return x.id===v.financiacionId;}):null;
