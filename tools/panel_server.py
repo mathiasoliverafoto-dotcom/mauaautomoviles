@@ -103,6 +103,7 @@ def api_login():
     for v in vendedores:
         if v.get("username") and v["username"] == username and v.get("password") == pw_hash:
             session["user"] = username
+            session["id"] = v.get("id", "")
             session["nombre"] = v.get("nombre", username)
             session["rol"] = v.get("rol", "vendedor")
             session["sucursal"] = v.get("sucursal", "")
@@ -692,16 +693,22 @@ def api_ventas_create():
     return jsonify(venta), 201
 
 @app.route("/api/ventas/<vid>", methods=["DELETE"])
-@require_roles("admin_general", "admin_sucursal")
+@require_roles("admin_general", "admin_sucursal", "vendedor")
 def api_ventas_anular(vid):
     ventas = read_json("ventas.json")
     venta = next((v for v in ventas if v["id"] == vid), None)
     if not venta:
         return jsonify({"error": "Venta no encontrada"}), 404
-    if session.get("rol") == "admin_sucursal":
+    rol = session.get("rol")
+    if rol == "admin_sucursal":
         suc = session.get("sucursal", "")
         if venta.get("sucursal", "") != suc:
             return jsonify({"error": "No podés anular ventas de otra sucursal"}), 403
+    elif rol == "vendedor":
+        mi_id = session.get("id", "")
+        mi_nombre = (session.get("nombre") or "").strip()
+        if venta.get("vendedorId", "") != mi_id and (venta.get("vendedorNombre") or "").strip() != mi_nombre:
+            return jsonify({"error": "Solo podés anular tus propias ventas"}), 403
 
     fin_id = venta.get("financiacionId")
     if fin_id:

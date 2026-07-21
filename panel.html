@@ -1528,7 +1528,9 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       '</div></div>';
     }
 
-    var puedeAnular=currentUser.rol==="admin_general"||(currentUser.rol==="admin_sucursal"&&v.sucursal===currentUser.sucursal);
+    var puedeAnular=currentUser.rol==="admin_general"
+      ||(currentUser.rol==="admin_sucursal"&&v.sucursal===currentUser.sucursal)
+      ||(currentUser.rol==="vendedor"&&(v.vendedorId===currentUser.id||(v.vendedorNombre||"").trim()===(currentUser.nombre||"").trim()));
     if(puedeAnular){
       html+='<div style="margin-top:1rem;text-align:right"><button class="btn btn-outline btn-sm" style="color:var(--red);border-color:var(--red)" onclick="anularVenta(\''+esc(v.id)+'\')">Anular venta</button></div>';
     }
@@ -1600,12 +1602,15 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
       (v.observaciones?item("Observaciones", v.observaciones):"");
 
     var vv=document.getElementById("vdVenta");
-    if(currentUser.rol==="vendedor"){ vv.innerHTML=""; }
-    else if(v.condicion==="vendido"){
+    vv.innerHTML="";
+    if(v.condicion==="vendido"){
       var venta=ventas.find(function(x){return x.vehiculoId===v.id;});
-      if(venta){ vv.innerHTML=ventaDetalleHTML(venta); }
-      else { vv.innerHTML=""; }
-    } else { vv.innerHTML=""; }
+      if(venta){
+        var esVend=currentUser.rol==="vendedor";
+        var esMiVenta=esVend && (venta.vendedorId===currentUser.id||(venta.vendedorNombre||"").trim()===(currentUser.nombre||"").trim());
+        if(!esVend || esMiVenta){ vv.innerHTML=ventaDetalleHTML(venta); }
+      }
+    }
 
     var h=document.getElementById("vdHistorial");
     if(currentUser.rol==="vendedor"){ h.innerHTML=""; }
