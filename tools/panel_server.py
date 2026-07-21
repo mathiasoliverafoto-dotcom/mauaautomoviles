@@ -701,7 +701,13 @@ def api_financiaciones_list():
         suc = session.get("sucursal", "")
         ventas = read_json("ventas.json")
         ids_suc = {v["id"] for v in ventas if v.get("sucursal", "") == suc}
-        fins = [f for f in fins if f.get("ventaId", "") in ids_suc]
+        def visible(f):
+            vid = f.get("ventaId")
+            # Sin ventaId (importadas) o vinculadas a ventas de la sucursal
+            if not vid:
+                return True
+            return vid in ids_suc
+        fins = [f for f in fins if visible(f)]
     return jsonify(fins)
 
 @app.route("/api/financiaciones/<fid>/pagar", methods=["POST"])
