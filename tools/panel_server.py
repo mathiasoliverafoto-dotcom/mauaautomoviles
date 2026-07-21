@@ -680,6 +680,9 @@ def api_ventas_create():
 
     for i, v in enumerate(vehiculos):
         if v["id"] == veh_id:
+            prev_cond = v.get("condicion", "usado")
+            if prev_cond != "vendido":
+                vehiculos[i]["condicionPrevia"] = prev_cond
             vehiculos[i]["publicado"] = False
             vehiculos[i]["condicion"] = "vendido"
             vehiculos[i]["ventaId"] = venta["id"]
@@ -687,6 +690,50 @@ def api_ventas_create():
     write_json("vehiculos.json", vehiculos)
 
     return jsonify(venta), 201
+
+@app.route("/api/ventas/<vid>", methods=["DELETE"])
+@require_roles("admin_general", "admin_sucursal")
+def api_ventas_anular(vid):
+    ventas = read_json("ventas.json")
+    venta = next((v for v in ventas if v["id"] == vid), None)
+    if not venta:
+        return jsonify({"error": "Venta no encontrada"}), 404
+    if session.get("rol") == "admin_sucursal":
+        suc = session.get("sucursal", "")
+        if venta.get("sucursal", "") != suc:
+            return jsonify({"error": "No podés anular ventas de otra sucursal"}), 403
+
+    fin_id = venta.get("financiacionId")
+    if fin_id:
+        financiaciones = read_json("financiaciones.json")
+        fin = next((f for f in financiaciones if f["id"] == fin_id), None)
+        if fin:
+            tiene_pagos = any(
+                (c.get("pagada") or (c.get("montoPagado") or 0) > 0 or (c.get("pagos") or []))
+                for c in fin.get("cuotas", [])
+            )
+            if tiene_pagos and not request.args.get("force"):
+                return jsonify({
+                    "error": "La financiación tiene cuotas pagadas",
+                    "requiereConfirmacion": True,
+                }), 409
+            financiaciones = [f for f in financiaciones if f["id"] != fin_id]
+            write_json("financiaciones.json", financiaciones)
+
+    veh_id = venta.get("vehiculoId")
+    if veh_id:
+        vehiculos = read_json("vehiculos.json")
+        for i, v in enumerate(vehiculos):
+            if v["id"] == veh_id:
+                vehiculos[i]["condicion"] = v.get("condicionPrevia") or ("0km" if v.get("km", 0) == 0 else "usado")
+                vehiculos[i]["publicado"] = True
+                vehiculos[i].pop("ventaId", None)
+                break
+        write_json("vehiculos.json", vehiculos)
+
+    ventas = [v for v in ventas if v["id"] != vid]
+    write_json("ventas.json", ventas)
+    return jsonify({"ok": True})
 
 
 # ──────────────────────────────────────────────────────────────

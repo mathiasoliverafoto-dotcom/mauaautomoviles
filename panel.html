@@ -1527,8 +1527,30 @@ input, select, textarea { font-family: inherit; font-size: .9rem; }
           :'<span style="color:var(--green-h)">Saldada</span>')+
       '</div></div>';
     }
+
+    var puedeAnular=currentUser.rol==="admin_general"||(currentUser.rol==="admin_sucursal"&&v.sucursal===currentUser.sucursal);
+    if(puedeAnular){
+      html+='<div style="margin-top:1rem;text-align:right"><button class="btn btn-outline btn-sm" style="color:var(--red);border-color:var(--red)" onclick="anularVenta(\''+esc(v.id)+'\')">Anular venta</button></div>';
+    }
     return html;
   }
+  window.anularVenta=function(id){
+    var v=ventas.find(function(x){return x.id===id;}); if(!v) return;
+    var fin=v.financiacionId?financiaciones.find(function(x){return x.id===v.financiacionId;}):null;
+    var tienePagos=fin && fin.cuotas.some(function(c){return c.pagada||(c.montoPagado||0)>0||(c.pagos&&c.pagos.length);});
+    var msg="¿Anular la venta de "+((v.vehiculo&&(v.vehiculo.marca+" "+v.vehiculo.modelo))||"este vehículo")+"?\n\n"+
+      "El vehículo volverá a estar publicado y disponible.";
+    if(fin) msg+="\nLa financiación asociada se eliminará.";
+    if(tienePagos) msg+="\n\n⚠️ ATENCIÓN: hay cuotas ya cobradas que se perderán del registro.";
+    if(!confirm(msg)) return;
+    var url="/api/ventas/"+id+(tienePagos?"?force=1":"");
+    api(url,{method:"DELETE"}).then(function(){
+      loadAll();
+      var ov=document.getElementById("ventaDetOverlay"); if(ov)ov.classList.remove("is-open");
+      var ov2=document.getElementById("vehDetOverlay"); if(ov2)ov2.classList.remove("is-open");
+      toast("Venta anulada");
+    }).catch(function(e){toast(e.message,"err");});
+  };
 
   // Desde el historial de ventas: abre el mismo modal del vehículo (con galería
   // y datos) para que se vea igual que en la sección Vehículos.
